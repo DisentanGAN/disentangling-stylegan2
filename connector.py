@@ -1,5 +1,3 @@
-
-
 """
 The Connector class orchestrates the
 styleGAN training scheme by connecting
@@ -57,6 +55,28 @@ TODO: Connector class optimizes y to be equal to w.
 
 """
 
+import pytorch_lightning as pl
 
-class Connector():
-    pass
+class Connector(pl.LightningModule):
+    def __init__(
+        mapping,
+        generator,
+        encoder,
+        discriminator):
+        pass
+
+    def forward():
+        pass
+
+    def training_step():
+        pass
+
+    def test_step():
+        pass
+
+    def predict_step():
+        pass
+
+    def configure_optimizers():
+        pass
+
