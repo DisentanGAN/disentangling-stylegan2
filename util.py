@@ -10,6 +10,27 @@ from torch.autograd import Function
 
 from op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d, conv2d_gradfix
 
+# this here is temporary
+# to initialize Generator
+# Discriminator, Encoder
+#
+# should be refactored to
+# be either in a config or
+# as command line args
+channel_multiplier = 2
+channels = {
+    4: 512,
+    8: 512,
+    16: 512,
+    32: 512,
+    64: 256 * channel_multiplier,
+    128: 128 * channel_multiplier,
+    256: 64 * channel_multiplier,
+    512: 32 * channel_multiplier,
+    1024: 16 * channel_multiplier,
+}
+
+
 
 class PixelNorm(nn.Module):
     def __init__(self):

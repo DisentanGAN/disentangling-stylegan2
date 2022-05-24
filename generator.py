@@ -2,19 +2,6 @@ import pytorch_lightning as pl
 
 from util import *
 
-channel_multiplier = 2
-channels = {
-    4: 512,
-    8: 512,
-    16: 512,
-    32: 512,
-    64: 256 * channel_multiplier,
-    128: 128 * channel_multiplier,
-    256: 64 * channel_multiplier,
-    512: 32 * channel_multiplier,
-    1024: 16 * channel_multiplier,
-}
-
  
 class Generator(pl.LightningModule):
     """
@@ -29,7 +16,7 @@ class Generator(pl.LightningModule):
         size,
         style_dim,
         blur_kernel=[1, 3, 3, 1],
-        channels=channels
+        channels=channels,
     ):
 
         super().__init__()
