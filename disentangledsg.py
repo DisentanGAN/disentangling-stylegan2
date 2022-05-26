@@ -78,9 +78,8 @@ class DisentangledSG(pl.LightningModule):
         self.encoder = encoder
         self.discriminator = discriminator
 
+        # TODO: flexible downstream tasks (as a list)
         #self.downstream = None
-
-
 
         self.optim_conf = optim_conf
 
@@ -89,6 +88,8 @@ class DisentangledSG(pl.LightningModule):
         w = self.mapping(z)
         x = self.generator(w)
         y = self.encoder(x)
+
+        # TODO: how to insert downstream tasks here?
         return self.discriminator(y)
 
     def training_step(self):
@@ -113,6 +114,9 @@ class DisentangledSG(pl.LightningModule):
             else:
                 # no optimizer options specified: apply default
                 entry = self.optim_conf["default"]
+
+            # TODO: dynamic configuration of optimizers
+            # for downstream tasks (self.downstream)
 
             optim.append(entry["optimizer"](i.parameters(), **entry["args"]))
 
