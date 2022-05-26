@@ -1,37 +1,29 @@
-import pytorch_lightning as pl
+import torch.nn as nn
 
 from util import *
 
 
 """
-TODO: the Discriminator only
-does the classification on the
-latent embedding y, which was
-produced by the Encoder.
+Input is y, the embedding generated
+by the encoder based upon an input
+image x.
 
-Architecture of Discriminator?
-Probably a single or a few
-fully connected layers?
-
-Input is y, output is true/false
+Output is true/false -- whether the
+embedding y is based upon a 
+synthesized image x or a real image X
 """
 
-class Discriminator(pl.LightningModule):
-    def __init__(self):
-        pass
+class Discriminator(nn.Module):
+    def __init__(self, style_dim):
+        super().__init__()
 
-    def forward(self):
-        pass
+        self.final_linear = nn.Sequential(
+            EqualLinear(style_dim, style_dim, activation="fused_lrelu"),
+            EqualLinear(style_dim, style_dim, activation="fused_lrelu"),
+            EqualLinear(style_dim, style_dim, activation="fused_lrelu"),
+            EqualLinear(style_dim, 1),
+        )
 
-    def training_step(self):
-        pass
-
-    def test_step(self):
-        pass
-
-    def predict_step(self):
-        pass
-
-    def configure_optimizers(self):
-        pass
+    def forward(self, input):
+        return self.final_linear(input)
 

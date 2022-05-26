@@ -1,4 +1,4 @@
-import pytorch_lightning as pl
+import torch.nn as nn
 
 from util import *
 
@@ -12,7 +12,7 @@ that would generate x when
 fed to the Generator
 """
 
-class Encoder(pl.LightningModule):
+class Encoder(nn.Module):
     def __init__(
         self,
         size,
@@ -67,16 +67,4 @@ class Encoder(pl.LightningModule):
         out = self.final_linear(out)
 
         return out
-
-    def training_step(self):
-        pass
-
-    def test_step(self):
-        pass
-
-    def predict_step(self):
-        pass
-
-    def configure_optimizers(self):
-        pass
 

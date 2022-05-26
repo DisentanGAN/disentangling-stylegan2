@@ -1,8 +1,9 @@
-import pytorch_lightning as pl
+import torch.nn as nn
 
 from util import *
 
-class MappingNetwork(pl.LightningModule):
+
+class MappingNetwork(nn.Module):
     def __init__(
         self,
         style_dim,
@@ -28,16 +29,4 @@ class MappingNetwork(pl.LightningModule):
     def forward(self, z):
         y = self.style(z)
         return y
-
-    def training_step(self):
-        pass
-
-    def test_step(self):
-        pass
-
-    def predict_step(self):
-        pass
-
-    def configure_optimizers(self):
-        pass
 
