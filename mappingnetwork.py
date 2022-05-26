@@ -1,8 +1,3 @@
-import torch.nn as nn
-
-from util import *
-
-
 """
 Transforms randomly generated vector z
 into some latent representation w, that
@@ -14,6 +9,12 @@ We are aiming to further enforce the
 disentanglement by adding downstream
 tasks to the training scheme.
 """
+
+import torch.nn as nn
+
+from util import *
+
+
 
 class MappingNetwork(nn.Module):
     def __init__(

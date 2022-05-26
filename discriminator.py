@@ -1,8 +1,3 @@
-import torch.nn as nn
-
-from util import *
-
-
 """
 Input is y, the embedding generated
 by the encoder based upon an input
@@ -12,6 +7,11 @@ Output is true/false -- whether the
 embedding y is based upon a 
 synthesized image x or a real image X
 """
+
+import torch.nn as nn
+
+from util import *
+
 
 class Discriminator(nn.Module):
     def __init__(self, style_dim):

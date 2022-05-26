@@ -5,6 +5,9 @@ Should also be controllable by
 command line args.
 """
 
+import torch
+
+
 channel_multiplier = 2
 channels = {
     4: 512,

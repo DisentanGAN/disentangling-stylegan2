@@ -1,8 +1,3 @@
-import torch.nn as nn
-
-from util import *
-from defaultvalues import channels
-
 """
 Encoder gets a real image X
 or a fake image x as input
@@ -12,6 +7,11 @@ close to a latent vector w
 that would generate x when
 fed to the Generator
 """
+
+import torch.nn as nn
+
+from util import *
+from defaultvalues import channels
 
 class Encoder(nn.Module):
     def __init__(
