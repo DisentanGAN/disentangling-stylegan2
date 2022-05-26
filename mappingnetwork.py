@@ -23,6 +23,7 @@ class MappingNetwork(nn.Module):
         lr_mlp=0.01, # TODO: learning rate should probably not be set here
     ):
         super().__init__()
+
         self.style_dim = style_dim
         layers = [PixelNorm()]
 
@@ -37,6 +38,9 @@ class MappingNetwork(nn.Module):
             )
 
         self.style = nn.Sequential(*layers)
+
+    def module_name(self):
+        return self.__str__().split("(")[0]
 
     def forward(self, z):
         """

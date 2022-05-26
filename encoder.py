@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 from util import *
+from defaultvalues import channels
 
 """
 Encoder gets a real image X
@@ -42,6 +43,9 @@ class Encoder(nn.Module):
             ),
             EqualLinear(channels[4], style_dim),
         )
+
+    def module_name(self):
+        return self.__str__().split("(")[0]
 
     def forward(self, x):
         """

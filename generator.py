@@ -1,6 +1,7 @@
 import torch.nn as nn
 
 from util import *
+from defaultvalues import channels
 
 
 """
@@ -21,6 +22,8 @@ class Generator(nn.Module):
     ):
 
         super().__init__()
+
+
         self.size = size
         self.style_dim = style_dim
 
@@ -81,6 +84,9 @@ class Generator(nn.Module):
             in_channel = out_channel
 
         self.n_latent = self.log_size * 2 - 2
+
+    def module_name(self):
+        return self.__str__().split("(")[0]
 
     def forward(
         self,

@@ -1,5 +1,7 @@
 import pytorch_lightning as pl
 
+from defaultvalues import optimizers
+
 """
 The Connector class orchestrates the
 styleGAN training scheme by connecting
@@ -58,13 +60,15 @@ TODO: Connector class optimizes y to be equal to w.
 """
 
 
+
 class DisentangledSG(pl.LightningModule):
     def __init__(
         self,
         mappingnetwork,
         generator,
         encoder,
-        discriminator):
+        discriminator,
+        optimizers=optimizers):
 
         super().__init__()
 
@@ -72,6 +76,12 @@ class DisentangledSG(pl.LightningModule):
         self.generator = generator
         self.encoder = encoder
         self.discriminator = discriminator
+
+        #self.downstream = None
+
+
+
+        self.optimizers = optimizers
 
 
     def forward(self):
@@ -87,5 +97,20 @@ class DisentangledSG(pl.LightningModule):
         pass
 
     def configure_optimizers(self):
-        pass
+        optim = []
+        for i in [self.mappingnetwork, 
+                self.generator,
+                self.encoder,
+                self.discriminator]:
+
+            if i.module_name() in self.optimizers:
+                # get specified optimizer options for each submodule
+                entry = self.optimizer[i.module_name()]
+            else:
+                # no optimizer options specified: apply default
+                entry = self.optimizer["default"]
+
+            optim.append(entry["optimizer"](i.parameters(), **entry["args"]))
+
+        return tuple(optim)
 
