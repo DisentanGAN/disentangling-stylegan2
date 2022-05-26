@@ -124,11 +124,6 @@ class Generator(nn.Module):
         if len(styles) < 2:
             inject_index = self.n_latent
 
-            # TODO: these assignments have no effect
-            # what is latent?
-            # we would need to declare latent outside
-            # of this scope if we want to keep those
-            # assignments
             if styles[0].ndim < 3:
                 latent = styles[0].unsqueeze(1).repeat(1, inject_index, 1)
 
@@ -170,10 +165,6 @@ class Generator(nn.Module):
         image = skip
 
         if return_latents:
-            # TODO: latent will here always be None
-            # because it was only assigned values in
-            # nested scopes. 
-            # What is latent and do we need it?
             return image, latent
 
         else:
