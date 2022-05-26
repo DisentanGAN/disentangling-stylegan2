@@ -1,3 +1,5 @@
+import pytorch_lightning as pl
+
 """
 The Connector class orchestrates the
 styleGAN training scheme by connecting
@@ -18,7 +20,7 @@ to disentangle y and thereby w.
 
 end to end view for synthesized images:
 
-  w        z        x        y   
+  z        w        x        y   
 -----> F -----> G -----> E -----> D --> real / fake
 
 end to end view for real images:
@@ -32,18 +34,18 @@ figure 1 on page 3.
 In this implementation:
 
 MappingNetwork (F): fully connected network that translates
-a meaningless random vector w into some hopefully
-disentangled and thereby meaningful latent vector z
+a meaningless random vector z into some hopefully
+disentangled and thereby meaningful latent vector w
 
-Generator (G): takes as input latent vector z and feeds it
+Generator (G): takes as input latent vector w and feeds it
 as style vector to each upsampling layer, effectively
-converting z to a representation x in pixel space
+converting w to a representation x in pixel space
 
 Encoder (E): takes as input an instance from pixel
 space (x for synthesized images, X for real images)
 and embeds it into a latent representation y, which
 is being optimized to be equal to original latent
-representation z
+representation w
 
 Discriminator (D): takes as input a latent embedding y
 and decides whether y embeds a real or a fake image,
@@ -55,16 +57,22 @@ TODO: Connector class optimizes y to be equal to w.
 
 """
 
-import pytorch_lightning as pl
 
-class Connector(pl.LightningModule):
+class DisentangledSG(pl.LightningModule):
     def __init__(
         self,
-        mapping,
+        mappingnetwork,
         generator,
         encoder,
         discriminator):
-        pass
+
+        super().__init__()
+
+        self.mapping = mappingnetwork
+        self.generator = generator
+        self.encoder = encoder
+        self.discriminator = discriminator
+
 
     def forward(self):
         pass

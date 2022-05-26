@@ -3,6 +3,18 @@ import torch.nn as nn
 from util import *
 
 
+"""
+Transforms randomly generated vector z
+into some latent representation w, that
+during training is supposed to achieve
+some kind of disentanglement as observed
+in the original StyleGAN2 paper.
+
+We are aiming to further enforce the
+disentanglement by adding downstream
+tasks to the training scheme.
+"""
+
 class MappingNetwork(nn.Module):
     def __init__(
         self,
@@ -27,6 +39,10 @@ class MappingNetwork(nn.Module):
         self.style = nn.Sequential(*layers)
 
     def forward(self, z):
-        y = self.style(z)
-        return y
+        """
+        z: randomly sampled vector
+        returns: transformation of z into w-mannifold
+        """
+        w = self.style(z)
+        return w
 

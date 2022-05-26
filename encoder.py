@@ -43,8 +43,12 @@ class Encoder(nn.Module):
             EqualLinear(channels[4], style_dim),
         )
 
-    def forward(self, input):
-        out = self.convs(input)
+    def forward(self, x):
+        """
+        x: image
+        returns: embedding of x in w-mannifold
+        """
+        out = self.convs(x)
 
         batch, channel, height, width = out.shape
         group = min(batch, self.stddev_group)
