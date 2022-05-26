@@ -106,10 +106,10 @@ class DisentangledSG(pl.LightningModule):
 
             if i.module_name() in self.optimizers:
                 # get specified optimizer options for each submodule
-                entry = self.optimizer[i.module_name()]
+                entry = self.optimizers[i.module_name()]
             else:
                 # no optimizer options specified: apply default
-                entry = self.optimizer["default"]
+                entry = self.optimizers["default"]
 
             optim.append(entry["optimizer"](i.parameters(), **entry["args"]))
 
