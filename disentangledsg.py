@@ -85,8 +85,11 @@ class DisentangledSG(pl.LightningModule):
         self.optim_conf = optim_conf
 
 
-    def forward(self):
-        pass
+    def forward(self, z):
+        w = self.mapping(z)
+        x = self.generator(w)
+        y = self.encoder(x)
+        return self.discriminator(y)
 
     def training_step(self):
         pass
@@ -99,7 +102,7 @@ class DisentangledSG(pl.LightningModule):
 
     def configure_optimizers(self):
         optim = []
-        for i in [self.mapping, 
+        for i in [self.mapping,
                 self.generator,
                 self.encoder,
                 self.discriminator]:
