@@ -22,7 +22,7 @@ channels = {
 }
 
 # this is only a sketch =)
-optimizers = {
+optim_conf = {
     "default": {
         "optimizer": torch.optim.Adam,
         "args": {"lr" : 0.2},

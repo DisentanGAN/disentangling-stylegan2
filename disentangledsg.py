@@ -57,7 +57,7 @@ TODO: Connector class optimizes y to be equal to w.
 
 import pytorch_lightning as pl
 
-from defaultvalues import optimizers
+from defaultvalues import optim_conf
 
 
 
@@ -69,7 +69,7 @@ class DisentangledSG(pl.LightningModule):
         generator,
         encoder,
         discriminator,
-        optimizers=optimizers):
+        optim_conf=optim_conf):
 
         super().__init__()
 
@@ -82,7 +82,7 @@ class DisentangledSG(pl.LightningModule):
 
 
 
-        self.optimizers = optimizers
+        self.optim_conf = optim_conf
 
 
     def forward(self):
@@ -104,12 +104,12 @@ class DisentangledSG(pl.LightningModule):
                 self.encoder,
                 self.discriminator]:
 
-            if i.module_name() in self.optimizers:
+            if i.module_name() in self.optim_conf:
                 # get specified optimizer options for each submodule
-                entry = self.optimizers[i.module_name()]
+                entry = self.optim_conf[i.module_name()]
             else:
                 # no optimizer options specified: apply default
-                entry = self.optimizers["default"]
+                entry = self.optim_conf["default"]
 
             optim.append(entry["optimizer"](i.parameters(), **entry["args"]))
 
