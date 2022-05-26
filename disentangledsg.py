@@ -99,7 +99,7 @@ class DisentangledSG(pl.LightningModule):
 
     def configure_optimizers(self):
         optim = []
-        for i in [self.mappingnetwork, 
+        for i in [self.mapping, 
                 self.generator,
                 self.encoder,
                 self.discriminator]:
