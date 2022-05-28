@@ -28,13 +28,17 @@ optim_conf = {
         "optimizer": torch.optim.Adam,
         "args": {"lr" : 0.2},
     },
-    "MappingNetwork": {
+    "discrimination": {
         "optimizer": torch.optim.Adam,
         "args": {"lr" : 0.7},
     },
-    "Generator": {
+    "generation": {
         "optimizer": torch.optim.RMSprop,
         "args": {"lr": 0.002, "alpha": 0.19},
+    },
+    "consistency": {
+        "optimizer": torch.optim.Adam,
+        "args": {"lr": 0.612}
     },
 }
 

@@ -455,3 +455,34 @@ class ResBlock(nn.Module):
         return out
 
 
+
+def requires_grad(model, flag=True):
+    for p in model.parameters():
+        p.requires_grad = flag
+
+
+def make_noise(batch, latent_dim, n_noise):
+    """
+    returns a single noise vector, usable as z
+    or a list of noise vectors.
+    this can be used to generate a list of w
+    vectors; if the generator is passed a
+    list of w-vectors, it will mix styles
+    """
+    if n_noise == 1:
+        return [torch.randn(batch, latent_dim)]
+
+    noises = torch.randn(n_noise, batch, latent_dim).unbind(0)
+
+    return noises
+
+
+def mixing_noise(batch, latent_dim, prob):
+    """
+    """
+    if prob > 0 and random.random() < prob:
+        return make_noise(batch, latent_dim, 2)
+
+    else:
+        return make_noise(batch, latent_dim, 1)
+

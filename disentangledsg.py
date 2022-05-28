@@ -57,7 +57,11 @@ TODO: Connector class optimizes y to be equal to w.
 
 import pytorch_lightning as pl
 
+from torch.nn import ModuleList
+
 from defaultvalues import optim_conf
+from util import requires_grad, mixing_noise
+from non_leaking import augment, AdaptiveAugment
 
 
 
@@ -78,6 +82,18 @@ class DisentangledSG(pl.LightningModule):
         self.encoder = encoder
         self.discriminator = discriminator
 
+        self.submodules = [
+                self.mapping,
+                self.generator,
+                self.encoder,
+                self.discriminator,
+        ]
+
+        self.latent  = mappingnetwork.style_dim
+        self.imgsize = generator.size
+
+        self.augment_data = False
+
         # TODO: flexible downstream tasks (as a list)
         #self.downstream = None
 
@@ -95,33 +111,84 @@ class DisentangledSG(pl.LightningModule):
         # TODO: how to insert downstream tasks here?
         return d
 
-    def training_step(self):
-        pass
 
-    def test_step(self):
-        pass
+    def set_trainable(self, *trainable_models):
+        """
+        freeze all parameters of all models,
+        then unfreeze parameters of models
+        in argument for training.
+        """
+        for i in self.submodules:
+            requires_grad(i, flag=False)
+        for i in trainable_models:
+            requires_grad(i, flag=True)
 
-    def predict_step(self):
-        pass
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        # batch contains x, y (data and label)
+        # configure pytorch lightning for multistage training steps:
+        # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html?highlight=training_step#training-step
+
+        if optimizer_idx == 0:
+            # OPTIMIZE DISCRIMINATION
+    
+            self.set_trainable(
+                    self.discriminator,
+                    self.encoder)
+
+            real_img_batch = batch[0]
+            batch_size = real_img_batch.shape[0]
+
+            noise = mixing_noise(batch_size, self.latent, args.mixing)
+            fake_img_batch, _ = self.generator([mapping(z) for z in noise])
+
+            if self.augment_data:
+                real_img_aug, _ = augment(real_img_batch, ada_aug_p)
+                fake_img, _ = augment(fake_img_batch, ada_aug_p)
+
+            else:
+                real_img_aug = real_img_batch
+
+
+        if optimizer_idx == 1:
+            # OPTIMIZE GENERATION
+            self.set_trainable(
+                    self.mapping,
+                    self.generator)
+            pass
+
+        if optimizer_idx == 2:
+            # OPTIMIZE CONSISTENCY
+            self.set_trainable(
+                    self.mapping,
+                    self.generator,
+                    self.encoder)
+            pass
+
+
 
     def configure_optimizers(self):
-        optim = []
-        for i in [self.mapping,
-                self.generator,
-                self.encoder,
-                self.discriminator]:
 
-            if i.module_name() in self.optim_conf:
-                # get specified optimizer options for each submodule
-                entry = self.optim_conf[i.module_name()]
-            else:
-                # no optimizer options specified: apply default
-                entry = self.optim_conf["default"]
+        # for the following tasks there will be separate
+        # optimizations and corresponding partial 
+        # training steps 
+        tasks = ["discrimination", "generation", "consistency"]
 
-            # TODO: dynamic configuration of optimizers
-            # for downstream tasks (self.downstream)
+        # select for each task the corresponding 
+        # submodules to optimize
+        params = [ModuleList(self.encoder, self.discriminator),
+                ModuleList(self.mapping, self.generator),
+                ModuleList(self.mapping, self.generator, self.encoder)]
+        # shorthand
+        o = self.optim_conf
 
-            optim.append(entry["optimizer"](i.parameters(), **entry["args"]))
+        # generate an optimizer for each task according
+        # to optimizer configuration in variable optim_conf
+        # (default_values.py:26)
+        optim = [o[i]["optimizer"](j.parameters(), **o[i]["args"]) \
+                for i, j in zip(tasks, params)]
 
-        return tuple(optim)
+        # return a list of optimizers
+        # https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.core.LightningModule.html#pytorch_lightning.core.LightningModule.configure_optimizers
+        return optim
 
