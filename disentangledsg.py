@@ -176,9 +176,9 @@ class DisentangledSG(pl.LightningModule):
 
         # select for each task the corresponding 
         # submodules to optimize
-        params = [ModuleList(self.encoder, self.discriminator),
-                ModuleList(self.mapping, self.generator),
-                ModuleList(self.mapping, self.generator, self.encoder)]
+        params = [ModuleList([self.encoder, self.discriminator]),
+                ModuleList([self.mapping, self.generator]),
+                ModuleList([self.mapping, self.generator, self.encoder])]
         # shorthand
         o = self.optim_conf
 
