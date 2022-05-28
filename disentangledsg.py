@@ -18,12 +18,12 @@ to disentangle y and thereby w.
 
 end to end view for synthesized images:
 
-  z        w        x        y   
------> F -----> G -----> E -----> D --> real / fake
+  z        w        x        y       d   
+-----> F -----> G -----> E -----> D ---> real / fake
 
 end to end view for real images:
-                             y   
-                    X -> E -----> D --> real / fake
+                             y       d
+                    X -> E -----> D ---> real / fake
 
 see also [here](https://arxiv.org/pdf/2004.04467.pdf),
 figure 1 on page 3.
@@ -86,11 +86,14 @@ class DisentangledSG(pl.LightningModule):
 
     def forward(self, z):
         w = self.mapping(z)
-        x = self.generator(w)
-        y = self.encoder(x)
+        x = self.generator([w])
+        y = self.encoder(x[0])
+        d = self.discriminator(y)
+
+        # TODO: what is the latent value in x[1]?
 
         # TODO: how to insert downstream tasks here?
-        return self.discriminator(y)
+        return d
 
     def training_step(self):
         pass

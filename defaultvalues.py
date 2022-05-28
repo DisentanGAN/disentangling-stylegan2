@@ -21,7 +21,8 @@ channels = {
     1024: 16 * channel_multiplier,
 }
 
-# this is only a sketch =)
+# values here only for debbuging
+# TODO: find sensible default values
 optim_conf = {
     "default": {
         "optimizer": torch.optim.Adam,
@@ -29,7 +30,11 @@ optim_conf = {
     },
     "MappingNetwork": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.2},
+        "args": {"lr" : 0.7},
+    },
+    "Generator": {
+        "optimizer": torch.optim.RMSprop,
+        "args": {"lr": 0.002, "alpha": 0.19},
     },
 }
 
