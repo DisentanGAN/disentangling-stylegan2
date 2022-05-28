@@ -486,3 +486,10 @@ def mixing_noise(batch, latent_dim, prob):
     else:
         return make_noise(batch, latent_dim, 1)
 
+
+def d_logistic_loss(real_pred, fake_pred):
+    real_loss = F.softplus(-real_pred)
+    fake_loss = F.softplus(fake_pred)
+
+    return real_loss.mean() + fake_loss.mean()
+

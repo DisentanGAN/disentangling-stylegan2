@@ -60,7 +60,7 @@ import pytorch_lightning as pl
 from torch.nn import ModuleList
 
 from defaultvalues import optim_conf
-from util import requires_grad, mixing_noise
+from util import requires_grad, mixing_noise, d_logistic_loss
 from non_leaking import augment, AdaptiveAugment
 
 
@@ -149,9 +149,34 @@ class DisentangledSG(pl.LightningModule):
             else:
                 real_img_aug = real_img_batch
 
+            fake_pred = self.discriminator(self.encoder(fake_img))
+            real_pred = self.discriminator(self.encoder(real_img_aug))
+            d_loss = d_logistic_loss(real_pred, fake_pred)
+
+            # TODO: implement the rest of solver_mnist.py
+            # (around line 200)
+
+            # TODO:
+            # do we use *automatic optimization* or *manual optimization*?
+            # to enable manual optimization, add the following to the object:
+            # self.automatic_optimization = False
+            #
+            # see also here:
+            # https://pytorch-lightning.readthedocs.io/en/latest/common/optimization.html#id2
+
+            # TODO:
+            # what is the return value?
+            # either a loss tensor or a dictionary, which can
+            # have any number of entries but *must* have a
+            # "loss" entry.
+            #
+            # see also here:
+            # https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#training-step
+
 
         if optimizer_idx == 1:
             # OPTIMIZE GENERATION
+            # TODO
             self.set_trainable(
                     self.mapping,
                     self.generator)
@@ -159,6 +184,7 @@ class DisentangledSG(pl.LightningModule):
 
         if optimizer_idx == 2:
             # OPTIMIZE CONSISTENCY
+            # TODO
             self.set_trainable(
                     self.mapping,
                     self.generator,
