@@ -193,11 +193,12 @@ class DisentangledSG(pl.LightningModule):
 
 
     def regularize_discrimination(self, batch):
-        real_img = batch[0]
         self.set_trainable(
                 self.encoder,
-                self.discriminator,
-                real_img)
+                self.discriminator)
+
+        real_img = batch[0]
+        real_img.requires_grad = True
 
         if self.args.augment:
             real_img_aug, _ = augment(real_img, self.ada_augment.ada_aug_p)
