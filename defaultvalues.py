@@ -42,3 +42,31 @@ optim_conf = {
     },
 }
 
+
+args = {
+    "iter": 80000,
+    "batch": 32,
+    "n_sample": 64,
+    "r1": 10,
+    "path_regularize": 2, 
+    "path_batch_shrink": 2, 
+    "d_reg_every": 16,
+    "g_reg_every": 4,
+    "mixing": 0.9,
+    "ckpt": None,
+    "lr": 0.002,
+    "channel_multiplier": 2,
+    "wandb": False,
+    "local_rank": 0,
+    "augment": True,
+    "augment_p": 0,
+    "ada_target": 0.6,
+    "ada_length": 500000,
+    "ada_every": 256,
+    "gpu": 1,
+    "name": "First test experiment",
+    "run_name": "First test run",
+}
+
+
+

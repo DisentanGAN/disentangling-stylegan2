@@ -59,7 +59,7 @@ import pytorch_lightning as pl
 
 from torch.nn import ModuleList
 
-from defaultvalues import optim_conf
+from defaultvalues import optim_conf, args
 from util import (
     requires_grad,
     mixing_noise,
@@ -80,7 +80,7 @@ class DisentangledSG(pl.LightningModule):
         generator,
         encoder,
         discriminator,
-        args,
+        args=args,
         optim_conf=optim_conf):
 
         super().__init__()
