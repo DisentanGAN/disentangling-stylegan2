@@ -56,6 +56,7 @@ TODO: Connector class optimizes y to be equal to w.
 """
 
 import pytorch_lightning as pl
+import torch
 
 from torch.nn import ModuleList
 
