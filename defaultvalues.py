@@ -43,6 +43,10 @@ optim_conf = {
 }
 
 
+class DefaultArgs():
+    def __init__(self):
+        pass
+
 args = {
     "iter": 80000,
     "batch": 32,
@@ -67,6 +71,11 @@ args = {
     "name": "First test experiment",
     "run_name": "First test run",
 }
+
+
+default_args = DefaultArgs()
+_ = [default_args.__setattr__(i, args[i]) for i in args.keys()]
+
 
 
 
