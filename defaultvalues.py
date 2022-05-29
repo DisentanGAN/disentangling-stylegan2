@@ -70,6 +70,7 @@ args = {
     "gpu": 1,
     "name": "First test experiment",
     "run_name": "First test run",
+    "latent": 128,
 }
 
 

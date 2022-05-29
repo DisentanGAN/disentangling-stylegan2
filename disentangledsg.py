@@ -246,7 +246,7 @@ class DisentangledSG(pl.LightningModule):
         return {"loss": g_loss}
 
 
-    def regularize_generation(self, batch, batch_idx):
+    def regularize_generation(self, batch):
 
         batch_size = batch[0].shape[0]
 
