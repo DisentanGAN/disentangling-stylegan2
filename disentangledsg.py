@@ -66,6 +66,7 @@ from util import (
     d_logistic_loss,
     d_r1_loss,
     g_nonsaturating_loss,
+    g_path_regularize,
 )
 from non_leaking import augment, AdaptiveAugment
 
