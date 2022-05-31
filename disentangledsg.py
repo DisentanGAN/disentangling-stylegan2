@@ -211,7 +211,7 @@ class DisentangledSG(pl.LightningModule):
         real_pred = self.discriminator(self.encoder(real_img_aug))
         r1_loss = d_r1_loss(real_pred, real_img)
 
-        reg_loss = (self.args.r1 / 2 * r1_loss * self.args.d_reg_every + 0 * real_pred[0])
+        reg_loss = (self.args.r1 / 2 * r1_loss * self.args.d_reg_every + 0 * real_pred[0])[0]
         self.loss_dict["r1"] = r1_loss
 
         return {"loss": reg_loss}
@@ -249,6 +249,9 @@ class DisentangledSG(pl.LightningModule):
 
 
     def regularize_generation(self, batch):
+        self.set_trainable(
+                self.mapping,
+                self.generator)
 
         batch_size = batch[0].shape[0]
 
