@@ -147,7 +147,7 @@ class DisentangledSG(pl.LightningModule):
         if optimizer_idx == 1:
             return self.optimize_generation(batch, batch_idx)
         if optimizer_idx == 2:
-            return self.optimize_consistency(batch, batch_idx)
+            return self.optimize_consistency(batch)
 
         # we should never arrive here
         return None
@@ -271,7 +271,7 @@ class DisentangledSG(pl.LightningModule):
         return {"loss": weighted_path_loss}
 
 
-    def optimize_consistency(self, batch, batch_idx):
+    def optimize_consistency(self, batch):
 
         real_img   = batch[0]
         batch_size = real_img.shape[0]
