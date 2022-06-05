@@ -170,7 +170,7 @@ class DisentangledSG(pl.LightningModule):
         real_img   = batch[0]
         batch_size = real_img.shape[0]
 
-        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing)
+        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing, self.device)
         fake_img, _ = self.generator([self.mapping(z) for z in noise])
 
         if self.args.augment:
@@ -234,7 +234,7 @@ class DisentangledSG(pl.LightningModule):
         real_img   = batch[0]
         batch_size = real_img.shape[0]
 
-        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing)
+        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing, self.device)
         fake_img, _ = self.generator([self.mapping(z) for z in noise])
 
         if self.args.augment:
@@ -256,7 +256,7 @@ class DisentangledSG(pl.LightningModule):
         batch_size = batch[0].shape[0]
 
         path_batch_size = max(1, batch_size // self.args.path_batch_shrink)
-        noise = mixing_noise(path_batch_size, self.args.latent, self.args.mixing)
+        noise = mixing_noise(path_batch_size, self.args.latent, self.args.mixing, self.device)
         fake_img, latents = self.generator([self.mapping(z) \
                 for z in noise], return_latents=True)
 
@@ -286,7 +286,7 @@ class DisentangledSG(pl.LightningModule):
 
         batch_size = batch[0].shape[0]
 
-        w_z = self.mapping(torch.randn(batch_size, self.args.latent))
+        w_z = self.mapping(torch.randn(batch_size, self.args.latent, device=self.device))
         fake_img, _ = self.generator([w_z])
 
         consistency_loss = (w_z - self.encoder(fake_img)).pow(2).mean()

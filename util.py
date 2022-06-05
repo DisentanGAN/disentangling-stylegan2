@@ -3,12 +3,14 @@ import random
 import functools
 import operator
 
+
 import torch
 from torch import nn, autograd
 from torch.nn import functional as F
 from torch.autograd import Function
 
 from op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d, conv2d_gradfix
+
 
 
 
@@ -101,7 +103,8 @@ class EqualConv2d(nn.Module):
         self.weight = nn.Parameter(
             torch.randn(out_channel, in_channel, kernel_size, kernel_size)
         )
-        self.scale = 1 / math.sqrt(in_channel * kernel_size ** 2)
+        self.scale = 1 / ( (in_channel * kernel_size ** 2) ** 0.5 )
+
 
         self.stride = stride
         self.padding = padding
@@ -146,7 +149,7 @@ class EqualLinear(nn.Module):
 
         self.activation = activation
 
-        self.scale = (1 / math.sqrt(in_dim)) * lr_mul
+        self.scale = (1 / (in_dim ** 0.5)) * lr_mul
         self.lr_mul = lr_mul
 
     def forward(self, input):
@@ -206,7 +209,7 @@ class ModulatedConv2d(nn.Module):
             self.blur = Blur(blur_kernel, pad=(pad0, pad1))
 
         fan_in = in_channel * kernel_size ** 2
-        self.scale = 1 / math.sqrt(fan_in)
+        self.scale = 1 / (fan_in ** 0.5)
         self.padding = kernel_size // 2
 
         self.weight = nn.Parameter(
@@ -450,7 +453,7 @@ class ResBlock(nn.Module):
         out = self.conv2(out)
 
         skip = self.skip(input)
-        out = (out + skip) / math.sqrt(2)
+        out = (out + skip) / (2 ** 0.5)
 
         return out
 
@@ -461,7 +464,7 @@ def requires_grad(model, flag=True):
         p.requires_grad = flag
 
 
-def make_noise(batch, latent_dim, n_noise):
+def make_noise(batch, latent_dim, n_noise, device=None):
     """
     returns a single noise vector, usable as z
     or a list of noise vectors.
@@ -470,19 +473,19 @@ def make_noise(batch, latent_dim, n_noise):
     list of w-vectors, it will mix styles
     """
     if n_noise == 1:
-        return [torch.randn(batch, latent_dim)]
+        return [torch.randn(batch, latent_dim, device=device)]
 
-    noises = torch.randn(n_noise, batch, latent_dim).unbind(0)
+    noises = torch.randn(n_noise, batch, latent_dim, device=device).unbind(0)
 
     return noises
 
 
-def mixing_noise(batch, latent_dim, prob):
+def mixing_noise(batch, latent_dim, prob, device = None):
     if prob > 0 and random.random() < prob:
-        return make_noise(batch, latent_dim, 2)
+        return make_noise(batch, latent_dim, 2, device=device)
 
     else:
-        return make_noise(batch, latent_dim, 1)
+        return make_noise(batch, latent_dim, 1,  device=device)
 
 
 def d_logistic_loss(real_pred, fake_pred):
@@ -511,8 +514,8 @@ def g_nonsaturating_loss(fake_pred):
 
 
 def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
-    noise = torch.randn_like(fake_img) / math.sqrt(
-        fake_img.shape[2] * fake_img.shape[3]
+    noise = torch.randn_like(fake_img) / (
+            (fake_img.shape[2] * fake_img.shape[3]) ** 0.5
     )
     grad, = autograd.grad(
         outputs=(fake_img * noise).sum(), inputs=latents, create_graph=True
