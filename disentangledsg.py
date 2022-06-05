@@ -59,6 +59,9 @@ import pytorch_lightning as pl
 import torch
 
 from torch.nn import ModuleList
+from torch.utils.data import DataLoader
+from torchvision.datasets import MNIST
+from torchvision import transforms
 
 from defaultvalues import optim_conf, default_args
 from util import (
@@ -71,26 +74,26 @@ from util import (
 )
 from non_leaking import augment, AdaptiveAugment
 
-
-
+from mappingnetwork import MappingNetwork
+from generator import Generator
+from discriminator import Discriminator
+from encoder import Encoder
 
 
 class DisentangledSG(pl.LightningModule):
     def __init__(
         self,
-        mappingnetwork,
-        generator,
-        encoder,
-        discriminator,
         args=default_args,
         optim_conf=optim_conf):
 
         super().__init__()
 
-        self.mapping = mappingnetwork
-        self.generator = generator
-        self.encoder = encoder
-        self.discriminator = discriminator
+        self.save_hyperparameters()
+
+        self.mapping = MappingNetwork(args.latent, args.n_mlp)
+        self.generator = Generator(args.image_size, args.latent)
+        self.encoder = Encoder(args.image_size, args.latent)
+        self.discriminator = Discriminator(args.latent)
 
         self.submodules = [
                 self.mapping,
@@ -101,8 +104,6 @@ class DisentangledSG(pl.LightningModule):
 
         device = f"cuda:{args.gpu}"
         self.ada_augment = AdaptiveAugment(args.ada_target, args.ada_length, 8, device)
-
-        self.imgsize = generator.size
 
         self.args = args
 
@@ -252,7 +253,7 @@ class DisentangledSG(pl.LightningModule):
         self.loss_dict["g"] = g_loss
 
         self.log('generator/loss', g_loss)
-        
+
         return {"loss": g_loss}
 
 
@@ -333,3 +334,19 @@ class DisentangledSG(pl.LightningModule):
         # https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.core.LightningModule.html#pytorch_lightning.core.LightningModule.configure_optimizers
         return optim
 
+    def train_dataloader(self):
+        transform = transforms.Compose([transforms.Grayscale(3), transforms.Resize(32), transforms.ToTensor()])
+
+        training_data = MNIST(
+            root="data",
+            train=True,
+            download=True,
+            transform=transform
+        )
+
+        dataloader = DataLoader(
+            training_data,                       
+            batch_size=self.args.batch_size
+        )
+
+        return dataloader

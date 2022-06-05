@@ -49,7 +49,7 @@ class DefaultArgs():
 
 args = {
     "iter": 80000,
-    "batch": 32,
+    "batch_size": 32,
     "n_sample": 64,
     "r1": 10,
     "path_regularize": 2, 
@@ -63,14 +63,16 @@ args = {
     "wandb": False,
     "local_rank": 0,
     "augment": True,
-    "augment_p": 0,
+    "augment_p": 0.8,
     "ada_target": 0.6,
     "ada_length": 500000,
     "ada_every": 256,
     "gpu": 1,
     "name": "First test experiment",
     "run_name": "First test run",
-    "latent": 128,
+    "latent": 32,
+    "image_size": 32,
+    "n_mlp": 4
 }
 
 
