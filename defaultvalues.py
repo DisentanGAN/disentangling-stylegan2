@@ -10,15 +10,15 @@ import torch
 
 channel_multiplier = 2
 channels = {
-    4: 512,
-    8: 512,
-    16: 512,
-    32: 512,
-    64: 256 * channel_multiplier,
-    128: 128 * channel_multiplier,
-    256: 64 * channel_multiplier,
-    512: 32 * channel_multiplier,
-    1024: 16 * channel_multiplier,
+    4: 64,
+    8: 64,
+    16: 32,
+    32: 32
+    # 64: 256 * channel_multiplier,
+    # 128: 128 * channel_multiplier,
+    # 256: 64 * channel_multiplier,
+    # 512: 32 * channel_multiplier,
+    # 1024: 16 * channel_multiplier,
 }
 
 # values here only for debbuging

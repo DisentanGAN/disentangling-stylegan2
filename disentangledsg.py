@@ -183,10 +183,14 @@ class DisentangledSG(pl.LightningModule):
         fake_pred = self.discriminator(self.encoder(fake_img))
         real_pred = self.discriminator(self.encoder(real_img_aug))
         d_loss = d_logistic_loss(real_pred, fake_pred)
-
+        
         self.loss_dict["d"] = d_loss
         self.loss_dict["real_score"] = real_pred.mean()
         self.loss_dict["fake_score"] = fake_pred.mean()
+
+        self.log('discriminator/loss', d_loss)
+        self.log('discriminator/real_score', real_pred.mean())
+        self.log('discriminator/fake_score', fake_pred.mean())
 
         if self.args.augment and self.args.augment_p == 0:
             self.ada_augment.tune(real_pred)
@@ -213,6 +217,8 @@ class DisentangledSG(pl.LightningModule):
 
         reg_loss = (self.args.r1 / 2 * r1_loss * self.args.d_reg_every + 0 * real_pred[0])[0]
         self.loss_dict["r1"] = r1_loss
+
+        self.log('r1/loss', r1_loss)
 
         return {"loss": reg_loss}
 
@@ -245,6 +251,8 @@ class DisentangledSG(pl.LightningModule):
 
         self.loss_dict["g"] = g_loss
 
+        self.log('generator/loss', g_loss)
+        
         return {"loss": g_loss}
 
 
@@ -271,6 +279,9 @@ class DisentangledSG(pl.LightningModule):
         self.loss_dict["path"] = path_loss
         self.loss_dict["path_length"] = path_lengths.mean()
 
+        self.log('path/loss', path_loss)
+        self.log('path/length', path_lengths.mean())
+
         return {"loss": weighted_path_loss}
 
 
@@ -291,6 +302,8 @@ class DisentangledSG(pl.LightningModule):
 
         consistency_loss = (w_z - self.encoder(fake_img)).pow(2).mean()
         self.loss_dict["consistency_loss"] = consistency_loss
+
+        self.log('consistency/loss', consistency_loss)
 
         return {"loss": consistency_loss}
 
