@@ -62,7 +62,7 @@ args = {
     "channel_multiplier": 2,
     "wandb": False,
     "local_rank": 0,
-    "augment": True,
+    "augment": False,
     "augment_p": 0.8,
     "ada_target": 0.6,
     "ada_length": 500000,
