@@ -1,15 +1,4 @@
-import torch
-import matplotlib.pyplot as plt
 import pytorch_lightning as pl
-
-from torch.utils import data
-from torch.utils.data import DataLoader
-
-from torchvision.datasets import MNIST
-from torchvision import transforms
-
-
-
 
 from disentangledsg import DisentangledSG
 

@@ -102,8 +102,7 @@ class DisentangledSG(pl.LightningModule):
                 self.discriminator,
         ]
 
-        device = f"cuda:{args.gpu}"
-        self.ada_augment = AdaptiveAugment(args.ada_target, args.ada_length, 8, device)
+        self.ada_augment = AdaptiveAugment(args.ada_target, args.ada_length, 8, self.device)
 
         self.args = args
 
