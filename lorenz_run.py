@@ -12,5 +12,5 @@ dsg = DisentangledSG(args)
 
 wandb_logger = WandbLogger(project="disentangling-gan")
 
-trainer = pl.Trainer(fast_dev_run=500, gpus=[0], logger=wandb_logger)
-trainer.fit(dsg)
+trainer = pl.Trainer(gpus=[0], logger=wandb_logger)
+trainer.fit(dsg, ckpt_path="/home/ocean/disentangling_gan/disentangling-stylegan2/disentangling-gan/10pmcl3u/checkpoints/epoch=29-step=168750.ckpt")

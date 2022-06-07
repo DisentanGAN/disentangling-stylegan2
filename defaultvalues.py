@@ -26,19 +26,19 @@ channels = {
 optim_conf = {
     "default": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.2},
+        "args": {"lr" : 0.01},
     },
     "discrimination": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.7},
+        "args": {"lr" : 0.01},
     },
     "generation": {
-        "optimizer": torch.optim.RMSprop,
-        "args": {"lr": 0.002, "alpha": 0.19},
+        "optimizer": torch.optim.Adam,
+        "args": {"lr": 0.01},
     },
     "consistency": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr": 0.612}
+        "args": {"lr": 0.01}
     },
 }
 
@@ -72,7 +72,10 @@ args = {
     "run_name": "First test run",
     "latent": 32,
     "image_size": 32,
-    "n_mlp": 4
+    "n_mlp": 4,
+    "store_images_every": 10,
+    "num_example_images": 8,
+    "seed": 42
 }
 
 

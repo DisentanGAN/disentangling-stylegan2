@@ -89,6 +89,9 @@ class DisentangledSG(pl.LightningModule):
         super().__init__()
 
         self.save_hyperparameters()
+        self.args = args
+
+        pl.seed_everything(self.args.seed)
 
         self.mapping = MappingNetwork(args.latent, args.n_mlp)
         self.generator = Generator(args.image_size, args.latent)
@@ -104,7 +107,6 @@ class DisentangledSG(pl.LightningModule):
 
         self.ada_augment = AdaptiveAugment(args.ada_target, args.ada_length, 8, self.device)
 
-        self.args = args
 
         self.mean_path_length = 0
 
@@ -152,6 +154,41 @@ class DisentangledSG(pl.LightningModule):
         # we should never arrive here
         return None
 
+    def on_epoch_start(self) -> None:
+
+        if self.example_data['images'][0].device.type == 'cpu':
+            self.example_data['images'] = [image.to(self.device) for image in self.example_data['images']]
+            self.example_data['noise'] = [noise.to(self.device) for noise in self.example_data['noise']]
+            self.example_data['z'] = [z.to(self.device) for z in self.example_data['z']]
+
+        if self.current_epoch % self.args.store_images_every == 0:
+            self.log_images()
+
+    def log_images(self) -> None:
+        pass
+        if type(self.logger) == pl.loggers.wandb.WandbLogger: 
+            self.logger.log_image(key='original images', images = self.example_data['images'])
+
+        # reconstruct real images
+        w = self.encoder(torch.stack(self.example_data['images']))
+        images, _ = self.generator([w], noise=self.example_data['noise'])
+
+        if type(self.logger) == pl.loggers.wandb.WandbLogger: 
+            self.logger.log_image(key='original images - reconstructed', images = list(images))
+
+        # generate from noise
+        w = self.mapping(torch.stack(self.example_data['z'])[0])
+        images, _ = self.generator([w], noise=self.example_data['noise'])
+
+        if type(self.logger) == pl.loggers.wandb.WandbLogger: 
+            self.logger.log_image(key='synthetic images', images = list(images))
+
+        # reconstruct from noise
+        w = self.encoder(images)
+        images, _ = self.generator([w], noise=self.example_data['noise'])
+
+        if type(self.logger) == pl.loggers.wandb.WandbLogger: 
+            self.logger.log_image(key='synthetic images - reconstructed', images = list(images))
 
     def optimize_discrimination(self, batch, batch_idx):
         # check for regularisation interval
@@ -333,19 +370,24 @@ class DisentangledSG(pl.LightningModule):
         # https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.core.LightningModule.html#pytorch_lightning.core.LightningModule.configure_optimizers
         return optim
 
-    def train_dataloader(self):
+    def prepare_data(self):
         transform = transforms.Compose([transforms.Grayscale(3), transforms.Resize(32), transforms.ToTensor()])
 
-        training_data = MNIST(
+        self.training_data = MNIST(
             root="data",
             train=True,
             download=True,
             transform=transform
         )
 
-        dataloader = DataLoader(
-            training_data,                       
+        self.example_data = {
+            'images': [self.training_data[i][0] for i in range(self.args.num_example_images)],
+            'noise': self.generator.make_noise(),
+            'z': [torch.randn(self.args.num_example_images, self.args.latent)]
+        }
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.training_data,                       
             batch_size=self.args.batch_size
         )
-
-        return dataloader

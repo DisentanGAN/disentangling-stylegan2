@@ -1,5 +1,9 @@
 # model checkpoints
 checkpoint
+disentangling-gan
+
+# data folder
+data
 
 # vim stuff
 *.swp
