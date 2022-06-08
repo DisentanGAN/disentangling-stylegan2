@@ -91,6 +91,8 @@ class DisentangledSG(pl.LightningModule):
         self.save_hyperparameters()
         self.args = args
 
+        self.automatic_optimization = False
+
         pl.seed_everything(self.args.seed)
 
         self.mapping = MappingNetwork(args.latent, args.n_mlp)
@@ -142,18 +144,11 @@ class DisentangledSG(pl.LightningModule):
             requires_grad(i, flag=True)
 
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
-
-        if optimizer_idx == 0:
-            return self.optimize_discrimination(batch, batch_idx)
-        if optimizer_idx == 1:
-            return self.optimize_generation(batch, batch_idx)
-        if optimizer_idx == 2:
-            return self.optimize_consistency(batch)
-
-        # we should never arrive here
-        return None
-
+    def training_step(self, batch, batch_idx):
+        self.optimize_discrimination(batch, batch_idx)
+        self.optimize_generation(batch, batch_idx)
+        self.optimize_consistency(batch)
+        
     def on_epoch_start(self) -> None:
 
         if self.example_data['images'][0].device.type == 'cpu':
@@ -194,17 +189,21 @@ class DisentangledSG(pl.LightningModule):
         # check for regularisation interval
         d_regularize = batch_idx % self.args.d_reg_every == 0
         if d_regularize:
-            return self.regularize_discrimination(batch)
+             return self.regularize_discrimination(batch)
         # default: do normal optimisation
-        return self.optimize_enc_and_disc(batch)
+        self.optimize_enc_and_disc(batch)
 
 
     def optimize_enc_and_disc(self, batch):
+        _, discriminator_optimizer, encoder_optimizer, _ = self.optimizers()
+        discriminator_optimizer.zero_grad()
+        encoder_optimizer.zero_grad()
+
         self.set_trainable(
                 self.encoder,
                 self.discriminator)
 
-        real_img   = batch[0]
+        real_img = batch[0]
         batch_size = real_img.shape[0]
 
         noise = mixing_noise(batch_size, self.args.latent, self.args.mixing, self.device)
@@ -232,10 +231,17 @@ class DisentangledSG(pl.LightningModule):
         if self.args.augment and self.args.augment_p == 0:
             self.ada_augment.tune(real_pred)
 
-        return {"loss": d_loss}
+        self.manual_backward(d_loss)
+        discriminator_optimizer.step()
+        encoder_optimizer.step()
+
 
 
     def regularize_discrimination(self, batch):
+        _, discriminator_optimizer, encoder_optimizer, _ = self.optimizers()
+        discriminator_optimizer.zero_grad()
+        encoder_optimizer.zero_grad()
+
         self.set_trainable(
                 self.encoder,
                 self.discriminator)
@@ -256,8 +262,11 @@ class DisentangledSG(pl.LightningModule):
         self.loss_dict["r1"] = r1_loss
 
         self.log('r1/loss', r1_loss)
+        self.log('regularization/loss', reg_loss)
 
-        return {"loss": reg_loss}
+        self.manual_backward(reg_loss)
+        discriminator_optimizer.step()
+        encoder_optimizer.step()
 
 
     def optimize_generation(self, batch, batch_idx):
@@ -270,6 +279,10 @@ class DisentangledSG(pl.LightningModule):
 
 
     def optimize_map_and_gen(self, batch):
+        generator_optimizer, _, _, mapping_optimizer = self.optimizers()
+        generator_optimizer.zero_grad()
+        mapping_optimizer.zero_grad()
+
         self.set_trainable(
                 self.mapping,
                 self.generator)
@@ -290,10 +303,15 @@ class DisentangledSG(pl.LightningModule):
 
         self.log('generator/loss', g_loss)
 
-        return {"loss": g_loss}
-
+        self.manual_backward(g_loss)
+        generator_optimizer.step()
+        mapping_optimizer.step()
 
     def regularize_generation(self, batch):
+        generator_optimizer, _, _, mapping_optimizer = self.optimizers()
+        generator_optimizer.zero_grad()
+        mapping_optimizer.zero_grad()
+
         self.set_trainable(
                 self.mapping,
                 self.generator)
@@ -318,11 +336,18 @@ class DisentangledSG(pl.LightningModule):
 
         self.log('path/loss', path_loss)
         self.log('path/length', path_lengths.mean())
+        self.log('path/weighted_path_loss', weighted_path_loss)
 
-        return {"loss": weighted_path_loss}
+        self.manual_backward(weighted_path_loss)
+        generator_optimizer.step()
+        mapping_optimizer.step()
 
 
     def optimize_consistency(self, batch):
+        generator_optimizer, _, encoder_optimizer, mapping_optimizer = self.optimizers()
+        generator_optimizer.zero_grad()
+        encoder_optimizer.zero_grad()
+        mapping_optimizer.zero_grad()
 
         real_img   = batch[0]
         batch_size = real_img.shape[0]
@@ -342,33 +367,31 @@ class DisentangledSG(pl.LightningModule):
 
         self.log('consistency/loss', consistency_loss)
 
-        return {"loss": consistency_loss}
-
+        self.manual_backward(consistency_loss)
+        generator_optimizer.step()
+        encoder_optimizer.step()
+        mapping_optimizer.step()
 
     def configure_optimizers(self):
 
-        # for the following tasks there will be separate
-        # optimizations and corresponding partial 
-        # training steps 
-        tasks = ["discrimination", "generation", "consistency"]
-
-        # select for each task the corresponding 
-        # submodules to optimize
-        params = [ModuleList([self.encoder, self.discriminator]),
-                ModuleList([self.mapping, self.generator]),
-                ModuleList([self.mapping, self.generator, self.encoder])]
-        # shorthand
-        o = self.optim_conf
-
-        # generate an optimizer for each task according
-        # to optimizer configuration in variable optim_conf
-        # (default_values.py:26)
-        optim = [o[i]["optimizer"](j.parameters(), **o[i]["args"]) \
-                for i, j in zip(tasks, params)]
-
-        # return a list of optimizers
-        # https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.core.LightningModule.html#pytorch_lightning.core.LightningModule.configure_optimizers
-        return optim
+        generator_optimizer = self.optim_conf['generator']['optimizer'](
+            self.generator.parameters(),
+            lr = self.optim_conf['generator']['args']['lr']
+            )
+        discriminator_optimizer = self.optim_conf['discriminator']['optimizer'](
+            self.discriminator.parameters(),
+            lr = self.optim_conf['discriminator']['args']['lr']
+            )
+        encoder_optimizer = self.optim_conf['encoder']['optimizer'](
+            self.encoder.parameters(),
+            lr = self.optim_conf['encoder']['args']['lr']
+            )
+        mapping_optimizer = self.optim_conf['mapping']['optimizer'](
+            self.mapping.parameters(),
+            lr = self.optim_conf['mapping']['args']['lr']
+            )
+        
+        return [generator_optimizer, discriminator_optimizer, encoder_optimizer, mapping_optimizer]
 
     def prepare_data(self):
         transform = transforms.Compose([transforms.Grayscale(3), transforms.Resize(32), transforms.ToTensor()])

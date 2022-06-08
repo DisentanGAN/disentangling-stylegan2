@@ -24,19 +24,19 @@ channels = {
 # values here only for debbuging
 # TODO: find sensible default values
 optim_conf = {
-    "default": {
+    "generator": {
         "optimizer": torch.optim.Adam,
         "args": {"lr" : 0.01},
     },
-    "discrimination": {
+    "discriminator": {
         "optimizer": torch.optim.Adam,
         "args": {"lr" : 0.01},
     },
-    "generation": {
+    "encoder": {
         "optimizer": torch.optim.Adam,
         "args": {"lr": 0.01},
     },
-    "consistency": {
+    "mapping": {
         "optimizer": torch.optim.Adam,
         "args": {"lr": 0.01}
     },
