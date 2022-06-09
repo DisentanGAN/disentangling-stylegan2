@@ -414,5 +414,5 @@ class DisentangledSG(pl.LightningModule):
         return DataLoader(
             self.training_data,                       
             batch_size=self.args['batch_size'],
-            num_workers=12
+            num_workers=self.args['dataloader_workers']
         )
