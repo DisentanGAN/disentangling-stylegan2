@@ -10,10 +10,10 @@ import torch
 
 channel_multiplier = 2
 channels = {
-    4: 64,
-    8: 64,
-    16: 32,
-    32: 32
+    4: 512,
+    8: 512,
+    16: 256,
+    32: 256
     # 64: 256 * channel_multiplier,
     # 128: 128 * channel_multiplier,
     # 256: 64 * channel_multiplier,
@@ -42,12 +42,7 @@ optim_conf = {
     },
 }
 
-
-class DefaultArgs():
-    def __init__(self):
-        pass
-
-args = {
+default_args = {
     "iter": 80000,
     "batch_size": 32,
     "n_sample": 64,
@@ -70,18 +65,10 @@ args = {
     "gpu": 1,
     "name": "First test experiment",
     "run_name": "First test run",
-    "latent": 32,
+    "latent": 128,
     "image_size": 32,
-    "n_mlp": 4,
+    "n_mlp": 8,
     "store_images_every": 10,
     "num_example_images": 8,
     "seed": 42
 }
-
-
-default_args = DefaultArgs()
-_ = [default_args.__setattr__(i, args[i]) for i in args.keys()]
-
-
-
-

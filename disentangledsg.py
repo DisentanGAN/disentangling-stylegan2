@@ -93,7 +93,7 @@ class DisentangledSG(pl.LightningModule):
 
         self.automatic_optimization = False
 
-        pl.seed_everything(self.args.seed)
+        pl.seed_everything(self.args['seed'])
 
         self.mapping = MappingNetwork(args.latent, args.n_mlp)
         self.generator = Generator(args.image_size, args.latent)
@@ -156,7 +156,7 @@ class DisentangledSG(pl.LightningModule):
             self.example_data['noise'] = [noise.to(self.device) for noise in self.example_data['noise']]
             self.example_data['z'] = [z.to(self.device) for z in self.example_data['z']]
 
-        if self.current_epoch % self.args.store_images_every == 0:
+        if self.current_epoch % self.args['store_images_every'] == 0:
             self.log_images()
 
     def log_images(self) -> None:
@@ -187,7 +187,7 @@ class DisentangledSG(pl.LightningModule):
 
     def optimize_discrimination(self, batch, batch_idx):
         # check for regularisation interval
-        d_regularize = batch_idx % self.args.d_reg_every == 0
+        d_regularize = batch_idx % self.args['d_reg_every'] == 0
         if d_regularize:
              return self.regularize_discrimination(batch)
         # default: do normal optimisation
@@ -206,10 +206,10 @@ class DisentangledSG(pl.LightningModule):
         real_img = batch[0]
         batch_size = real_img.shape[0]
 
-        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing, self.device)
+        noise = mixing_noise(batch_size, self.args['latent'], self.args['mixing'], self.device)
         fake_img, _ = self.generator([self.mapping(z) for z in noise])
 
-        if self.args.augment:
+        if self.args['augment']:
             real_img_aug, _ = augment(real_img, self.ada_augment.ada_aug_p)
             fake_img, _ = augment(fake_img, self.ada_augment.ada_aug_p)
 
@@ -228,7 +228,7 @@ class DisentangledSG(pl.LightningModule):
         self.log('discriminator/real_score', real_pred.mean())
         self.log('discriminator/fake_score', fake_pred.mean())
 
-        if self.args.augment and self.args.augment_p == 0:
+        if self.args['augment'] and self.args['augment_p'] == 0:
             self.ada_augment.tune(real_pred)
 
         self.manual_backward(d_loss)
@@ -249,7 +249,7 @@ class DisentangledSG(pl.LightningModule):
         real_img = batch[0]
         real_img.requires_grad = True
 
-        if self.args.augment:
+        if self.args['augment']:
             real_img_aug, _ = augment(real_img, self.ada_augment.ada_aug_p)
 
         else:
@@ -258,7 +258,7 @@ class DisentangledSG(pl.LightningModule):
         real_pred = self.discriminator(self.encoder(real_img_aug))
         r1_loss = d_r1_loss(real_pred, real_img)
 
-        reg_loss = (self.args.r1 / 2 * r1_loss * self.args.d_reg_every + 0 * real_pred[0])[0]
+        reg_loss = (self.args['r1'] / 2 * r1_loss * self.args['d_reg_every'] + 0 * real_pred[0])[0]
         self.loss_dict["r1"] = r1_loss
 
         self.log('r1/loss', r1_loss)
@@ -271,7 +271,7 @@ class DisentangledSG(pl.LightningModule):
 
     def optimize_generation(self, batch, batch_idx):
         # check for regularisation interval
-        g_regularize = batch_idx % self.args.g_reg_every == 0
+        g_regularize = batch_idx % self.args['g_reg_every'] == 0
         if g_regularize:
             return self.regularize_generation(batch)
         # default: do normal optimisation
@@ -290,10 +290,10 @@ class DisentangledSG(pl.LightningModule):
         real_img   = batch[0]
         batch_size = real_img.shape[0]
 
-        noise = mixing_noise(batch_size, self.args.latent, self.args.mixing, self.device)
+        noise = mixing_noise(batch_size, self.args['latent'], self.args['mixing'], self.device)
         fake_img, _ = self.generator([self.mapping(z) for z in noise])
 
-        if self.args.augment:
+        if self.args['augment']:
             fake_img, _ = augment(fake_img, self.ada_augment.ada_aug_p)
 
         fake_pred = self.discriminator(self.encoder(fake_img))
@@ -318,8 +318,8 @@ class DisentangledSG(pl.LightningModule):
 
         batch_size = batch[0].shape[0]
 
-        path_batch_size = max(1, batch_size // self.args.path_batch_shrink)
-        noise = mixing_noise(path_batch_size, self.args.latent, self.args.mixing, self.device)
+        path_batch_size = max(1, batch_size // self.args['path_batch_shrink'])
+        noise = mixing_noise(path_batch_size, self.args['latent'], self.args['mixing'], self.device)
         fake_img, latents = self.generator([self.mapping(z) \
                 for z in noise], return_latents=True)
 
@@ -327,8 +327,8 @@ class DisentangledSG(pl.LightningModule):
             fake_img, latents, self.mean_path_length
         )
 
-        weighted_path_loss = self.args.path_regularize * self.args.g_reg_every * path_loss
-        if self.args.path_batch_shrink:
+        weighted_path_loss = self.args['path_regularize'] * self.args['g_reg_every'] * path_loss
+        if self.args['path_batch_shrink']:
             weighted_path_loss += 0 * fake_img[0, 0, 0, 0]
 
         self.loss_dict["path"] = path_loss
@@ -359,7 +359,7 @@ class DisentangledSG(pl.LightningModule):
 
         batch_size = batch[0].shape[0]
 
-        w_z = self.mapping(torch.randn(batch_size, self.args.latent, device=self.device))
+        w_z = self.mapping(torch.randn(batch_size, self.args['latent'], device=self.device))
         fake_img, _ = self.generator([w_z])
 
         consistency_loss = (w_z - self.encoder(fake_img)).pow(2).mean()
@@ -404,13 +404,13 @@ class DisentangledSG(pl.LightningModule):
         )
 
         self.example_data = {
-            'images': [self.training_data[i][0] for i in range(self.args.num_example_images)],
+            'images': [self.training_data[i][0] for i in range(self.args['num_example_images'])],
             'noise': self.generator.make_noise(),
-            'z': [torch.randn(self.args.num_example_images, self.args.latent)]
+            'z': [torch.randn(self.args['num_example_images'], self.args['latent'])]
         }
 
     def train_dataloader(self):
         return DataLoader(
             self.training_data,                       
-            batch_size=self.args.batch_size
+            batch_size=self.args['batch_size']
         )
