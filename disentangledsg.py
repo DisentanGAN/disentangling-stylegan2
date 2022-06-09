@@ -95,10 +95,10 @@ class DisentangledSG(pl.LightningModule):
 
         pl.seed_everything(self.args['seed'])
 
-        self.mapping = MappingNetwork(args.['latent'], args.['n_mlp'])
-        self.generator = Generator(args.['image_size'], args.['latent'])
-        self.encoder = Encoder(args.['image_size'], args.['latent'])
-        self.discriminator = Discriminator(args.['latent'])
+        self.mapping = MappingNetwork(args['latent'], args['n_mlp'])
+        self.generator = Generator(args['image_size'], args['latent'])
+        self.encoder = Encoder(args['image_size'], args['latent'])
+        self.discriminator = Discriminator(args['latent'])
 
         self.submodules = [
                 self.mapping,
@@ -107,7 +107,7 @@ class DisentangledSG(pl.LightningModule):
                 self.discriminator,
         ]
 
-        self.ada_augment = AdaptiveAugment(args.['ada_target'], args.['ada_length'], 8, self.device)
+        self.ada_augment = AdaptiveAugment(args['ada_target'], args['ada_length'], 8, self.device)
 
 
         self.mean_path_length = 0
