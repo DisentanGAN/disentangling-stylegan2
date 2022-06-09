@@ -11,15 +11,14 @@ fed to the Generator
 import torch.nn as nn
 
 from util import *
-from defaultvalues import channels
 
 class Encoder(nn.Module):
     def __init__(
         self,
         size,
         style_dim,
+        channels,
         blur_kernel=[1, 3, 3, 1],
-        channels=channels,
     ):
         super().__init__()
 

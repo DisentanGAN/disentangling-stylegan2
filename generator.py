@@ -9,7 +9,6 @@ Output is the synthesized image x
 import torch.nn as nn
 
 from util import *
-from defaultvalues import channels
 
 
  
@@ -18,8 +17,8 @@ class Generator(nn.Module):
         self,
         size,
         style_dim,
+        channels,
         blur_kernel=[1, 3, 3, 1],
-        channels=channels,
     ):
 
         super().__init__()

@@ -63,7 +63,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision import transforms
 
-from defaultvalues import optim_conf, default_args
+from defaultvalues import optim_conf, channels, default_args
 from util import (
     requires_grad,
     mixing_noise,
@@ -84,7 +84,8 @@ class DisentangledSG(pl.LightningModule):
     def __init__(
         self,
         args=default_args,
-        optim_conf=optim_conf):
+        optim_conf=optim_conf,
+        channels=channels):
 
         super().__init__()
 
@@ -96,8 +97,8 @@ class DisentangledSG(pl.LightningModule):
         pl.seed_everything(self.args['seed'])
 
         self.mapping = MappingNetwork(args['latent'], args['n_mlp'])
-        self.generator = Generator(args['image_size'], args['latent'])
-        self.encoder = Encoder(args['image_size'], args['latent'])
+        self.generator = Generator(args['image_size'], args['latent'], channels)
+        self.encoder = Encoder(args['image_size'], args['latent'], channels)
         self.discriminator = Discriminator(args['latent'])
 
         self.submodules = [
@@ -412,5 +413,6 @@ class DisentangledSG(pl.LightningModule):
     def train_dataloader(self):
         return DataLoader(
             self.training_data,                       
-            batch_size=self.args['batch_size']
+            batch_size=self.args['batch_size'],
+            num_workers=12
         )
