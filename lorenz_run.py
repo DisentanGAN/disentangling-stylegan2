@@ -13,5 +13,9 @@ dsg = DisentangledSG(args)
 
 wandb_logger = WandbLogger(project="disentangling-gan")
 
-trainer = pl.Trainer(gpus=[0], logger=wandb_logger, max_epochs=200)
+trainer = pl.Trainer(
+    gpus=[0],
+    logger=wandb_logger,
+    max_epochs=200)
+
 trainer.fit(dsg)

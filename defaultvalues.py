@@ -10,10 +10,10 @@ import torch
 
 channel_multiplier = 2
 channels = {
-    4: 512,
-    8: 512,
-    16: 256,
-    32: 256
+    4: 128,
+    8: 128,
+    16: 64,
+    32: 64,
     # 64: 256 * channel_multiplier,
     # 128: 128 * channel_multiplier,
     # 256: 64 * channel_multiplier,
@@ -57,7 +57,7 @@ default_args = {
     "latent": 128,
     "image_size": 32,
     "n_mlp": 8,
-    "store_images_every": 10,
+    "store_images_every": 1,
     "num_example_images": 8,
     "seed": 42,
     "batch_size": 64,
