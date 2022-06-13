@@ -144,3 +144,4 @@ dmypy.json
 wandb/
 *.lmdb/
 *.pkl
+mlruns/0/meta.yaml

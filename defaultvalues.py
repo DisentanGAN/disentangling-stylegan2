@@ -26,7 +26,7 @@ channels = {
 optim_conf = {
     "generator": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.01},
+        "args": {"lr" : 0.002},
     },
     "discriminator": {
         "optimizer": torch.optim.Adam,
@@ -34,9 +34,13 @@ optim_conf = {
     },
     "encoder": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr": 0.01},
+        "args": {"lr": 0.002},
     },
     "mapping": {
+        "optimizer": torch.optim.Adam,
+        "args": {"lr": 0.002}
+    },
+    "classifier": {
         "optimizer": torch.optim.Adam,
         "args": {"lr": 0.01}
     },
@@ -60,6 +64,7 @@ default_args = {
     "store_images_every": 1,
     "num_example_images": 8,
     "seed": 42,
-    "batch_size": 64,
-    "dataloader_workers": 12,
+    "batch_size": 32,
+    "dataloader_workers": 2,
+    "classifier": None,
 }

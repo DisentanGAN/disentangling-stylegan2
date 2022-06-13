@@ -63,8 +63,6 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision import transforms
 
-from sklearn import svm
-import umap
 import matplotlib.pyplot as plt
 
 from defaultvalues import optim_conf, channels, default_args
@@ -112,6 +110,17 @@ class DisentangledSG(pl.LightningModule):
                 self.discriminator,
         ]
 
+        
+        if self.args['classifier'] == 'Linear':
+            self.classifier = None
+        elif self.args['classifier'] == 'Resnet':
+            self.classifier = None
+        else:
+            self.classifier = None
+
+        if self.classifier:
+            self.submodules.append(self.classifier)
+
         self.ada_augment = AdaptiveAugment(args['ada_target'], args['ada_length'], 8, self.device)
 
 
@@ -152,6 +161,7 @@ class DisentangledSG(pl.LightningModule):
         self.optimize_discrimination(batch, batch_idx)
         self.optimize_generation(batch, batch_idx)
         self.optimize_consistency(batch)
+        self.optim
 
 
     def on_train_epoch_start(self) -> None:
@@ -233,7 +243,7 @@ class DisentangledSG(pl.LightningModule):
 
 
     def optimize_enc_and_disc(self, batch):
-        _, discriminator_optimizer, encoder_optimizer, _ = self.optimizers()
+        _, discriminator_optimizer, encoder_optimizer, _, _ = self.optimizers()
         self.set_trainable(
             self.encoder,
             self.discriminator
@@ -271,7 +281,7 @@ class DisentangledSG(pl.LightningModule):
 
 
     def regularize_discrimination(self, batch):
-        _, discriminator_optimizer, encoder_optimizer, _ = self.optimizers()
+        _, discriminator_optimizer, encoder_optimizer, _, _ = self.optimizers()
 
         self.set_trainable(
                 self.encoder,
@@ -312,7 +322,7 @@ class DisentangledSG(pl.LightningModule):
 
 
     def optimize_map_and_gen(self, batch):
-        generator_optimizer, _, _, mapping_optimizer = self.optimizers()
+        generator_optimizer, _, _, mapping_optimizer, _ = self.optimizers()
 
         self.set_trainable(
                 self.mapping,
@@ -340,7 +350,7 @@ class DisentangledSG(pl.LightningModule):
 
 
     def regularize_generation(self, batch):
-        generator_optimizer, _, _, mapping_optimizer = self.optimizers()
+        generator_optimizer, _, _, mapping_optimizer, _ = self.optimizers()
 
         self.set_trainable(
                 self.mapping,
@@ -376,7 +386,7 @@ class DisentangledSG(pl.LightningModule):
 
 
     def optimize_consistency(self, batch):
-        generator_optimizer, _, encoder_optimizer, mapping_optimizer = self.optimizers()
+        generator_optimizer, _, encoder_optimizer, mapping_optimizer, _ = self.optimizers()
         real_img = batch[0]
         batch_size = real_img.shape[0]
 
@@ -401,6 +411,17 @@ class DisentangledSG(pl.LightningModule):
         generator_optimizer.step()
         encoder_optimizer.step()
         mapping_optimizer.step()
+
+    # def optimize_classification(self, batch, batch_idx):
+    #     _, _, encoder_optimizer, _, classifier_optimizer = self.optimizers()
+
+    #     self.set_trainable(
+    #             self.encoder,
+    #             self.classifier)
+
+    #     images, labels = batch
+    #     w = self.encoder(images)
+
 
 
     def configure_optimizers(self):
@@ -428,8 +449,15 @@ class DisentangledSG(pl.LightningModule):
             lr = self.optim_conf['mapping']['args']['lr'] * generation_regularization_ratio,
             betas = (0, 0.99 ** generation_regularization_ratio)
             )
+        if self.classifier:
+            classifier_optimizer = self.optim_conf['classifier']['optimizer'](
+                self.classifier.parameters(),
+                lr = self.optim_conf['classifier']['args']['lr']
+            )
+        else:
+            classifier_optimizer = None
         
-        return [generator_optimizer, discriminator_optimizer, encoder_optimizer, mapping_optimizer]
+        return [generator_optimizer, discriminator_optimizer, encoder_optimizer, mapping_optimizer, classifier_optimizer]
 
 
     def prepare_data(self):
@@ -460,5 +488,5 @@ class DisentangledSG(pl.LightningModule):
         return DataLoader(
             self.training_data,                       
             batch_size=self.args['batch_size'],
-            num_workers=self.args['dataloader_workers']
+            #num_workers=self.args['dataloader_workers']
         )
