@@ -10,10 +10,10 @@ import torch
 
 channel_multiplier = 2
 channels = {
-    4: 128,
-    8: 128,
-    16: 64,
-    32: 64,
+    4: 32,
+    8: 32,
+    16: 16,
+    32: 16,
     # 64: 256 * channel_multiplier,
     # 128: 128 * channel_multiplier,
     # 256: 64 * channel_multiplier,
@@ -30,7 +30,7 @@ optim_conf = {
     },
     "discriminator": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.01},
+        "args": {"lr" : 0.002},
     },
     "encoder": {
         "optimizer": torch.optim.Adam,
@@ -67,4 +67,5 @@ default_args = {
     "batch_size": 32,
     "dataloader_workers": 2,
     "classifier": None,
+    "classifier_classes": 10,
 }

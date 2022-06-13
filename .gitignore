@@ -1,6 +1,10 @@
 # model checkpoints
 checkpoint
 disentangling-gan
+lightning_logs
+
+# vs code
+.vscode
 
 # data folder
 data
