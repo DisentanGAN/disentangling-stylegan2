@@ -66,6 +66,6 @@ default_args = {
     "seed": 42,
     "batch_size": 32,
     "dataloader_workers": 2,
-    "classifier": None,
+    "classifier": "Linear",
     "classifier_classes": 10,
 }
