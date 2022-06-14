@@ -6,12 +6,12 @@ from defaultvalues import default_args
 
 dsg = DisentangledSG(default_args)
 
-wandb_logger = WandbLogger(project="disentangling-gan")
+#wandb_logger = WandbLogger(project="disentangling-gan")
 
 trainer = pl.Trainer(
     #default_root_dir='/netscratch',
     gpus=[0],
-    logger=wandb_logger,
+    #logger=wandb_logger,
     max_epochs=200)
 
 trainer.fit(dsg)
