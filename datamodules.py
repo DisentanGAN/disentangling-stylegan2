@@ -59,8 +59,8 @@ class PCAMDataModule(pl.LightningDataModule):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
-        # TODO: normalization
         self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                              transforms.CenterCrop(crop_size)
                                              ])
 
