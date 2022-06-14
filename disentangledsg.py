@@ -436,7 +436,7 @@ class DisentangledSG(pl.LightningModule):
         images, labels = batch
         w = self.encoder(images)
         predicted_labels = self.classifier(w)
-        classification_loss = self.classifier.loss(predicted_labels, labels)
+        classification_loss = self.classifier_loss(predicted_labels, labels)
 
         self.log('classifier/loss', classification_loss)
 
