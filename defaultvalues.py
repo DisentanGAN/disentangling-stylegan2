@@ -62,7 +62,6 @@ default_args = {
     "image_size": 32,
     "n_mlp": 8,
     "store_images_every": 1,
-    "num_example_images": 8,
     "seed": 42,
     "batch_size": 32,
     "dataloader_workers": 2,

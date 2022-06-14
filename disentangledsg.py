@@ -124,6 +124,11 @@ class DisentangledSG(pl.LightningModule):
 
         self.optim_conf = optim_conf
 
+        self.example_data = {
+            'noise': self.generator.make_noise(),
+            'z': [torch.randn(self.args['batch_size'], self.args['latent'])]
+        }
+
     def forward(self, z):
         w = self.mapping(z)
         x = self.generator([w])
@@ -155,6 +160,9 @@ class DisentangledSG(pl.LightningModule):
     
     
     def validation_step(self, batch, batch_idx):
+        if batch_idx == 0 and self.current_epoch % self.args['store_images_every'] == 0:
+            self.log_images(batch)
+
         if not self.classifier:
             return
         
@@ -170,44 +178,33 @@ class DisentangledSG(pl.LightningModule):
             self.log('classifier/validation/loss', classification_loss)
             self.log('classifier/validation/accuracy', accuracy)
 
-        
-    def on_train_epoch_start(self) -> None:
-        # self.check_seperability()
+    def log_images(self, batch) -> None:
+        example_images = batch[0]
+        noise = [noise.type_as(example_images) for noise in self.example_data['noise']]
+        z = [z.type_as(example_images) for z in self.example_data['z']]
 
-        if self.example_data['images'][0].device.type == 'cpu':
-            self.example_data['images'] = [
-                image.to(self.device) for image in self.example_data['images']]
-            self.example_data['noise'] = [
-                noise.to(self.device) for noise in self.example_data['noise']]
-            self.example_data['z'] = [z.to(self.device)
-                                      for z in self.example_data['z']]
-
-        if self.current_epoch % self.args['store_images_every'] == 0:
-            self.log_images()
-
-    def log_images(self) -> None:
         if type(self.logger) == pl.loggers.wandb.WandbLogger:
             self.logger.log_image(key='original images',
-                                  images=self.example_data['images'])
+                                  images=list(example_images))
 
         # reconstruct real images
-        w = self.encoder(torch.stack(self.example_data['images']))
-        images, _ = self.generator([w], noise=self.example_data['noise'])
+        w = self.encoder(example_images)
+        images, _ = self.generator([w], noise=noise)
 
         if type(self.logger) == pl.loggers.wandb.WandbLogger:
             self.logger.log_image(
                 key='original images - reconstructed', images=list(images))
 
         # generate from noise
-        w = self.mapping(torch.stack(self.example_data['z'])[0])
-        images, _ = self.generator([w], noise=self.example_data['noise'])
+        w = self.mapping(torch.stack(z)[0])
+        images, _ = self.generator([w], noise=noise)
 
         if type(self.logger) == pl.loggers.wandb.WandbLogger:
             self.logger.log_image(key='synthetic images', images=list(images))
 
         # reconstruct from noise
         w = self.encoder(images)
-        images, _ = self.generator([w], noise=self.example_data['noise'])
+        images, _ = self.generator([w], noise=noise)
 
         if type(self.logger) == pl.loggers.wandb.WandbLogger:
             self.logger.log_image(
@@ -471,46 +468,9 @@ class DisentangledSG(pl.LightningModule):
 
         return optimizer
 
-    def prepare_data(self):
-        transform = transforms.Compose([
-            # make MNIST images 32x32x3
-            transforms.Grayscale(3),
-            transforms.Pad(2),
 
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,), inplace=True),
-        ])
-
-        self.training_data = MNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transform
-        )
-
-        self.validation_data = MNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transform
-        )
-
-        self.example_data = {
-            'images': [self.training_data[i][0] for i in range(self.args['num_example_images'])],
-            'noise': self.generator.make_noise(),
-            'z': [torch.randn(self.args['num_example_images'], self.args['latent'])]
-        }
-
-    def train_dataloader(self):
-        return DataLoader(
-            self.training_data,
-            batch_size=self.args['batch_size'],
-            num_workers=self.args['dataloader_workers']
-        )
-
-    def val_dataloader(self):
-        return DataLoader(
-            self.validation_data,
-            batch_size=self.args['batch_size'],
-            num_workers=self.args['dataloader_workers']
-        )
+    # self.example_data = {
+    #     'images': [self.training_data[i][0] for i in range(self.args['num_example_images'])],
+    #     'noise': self.generator.make_noise(),
+    #     'z': [torch.randn(self.args['num_example_images'], self.args['latent'])]
+    # }
