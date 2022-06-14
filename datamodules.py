@@ -1,5 +1,5 @@
 """
-Contains PyTorch LightningDataModules for supported datasets.
+Contains LightningDataModules for supported datasets.
 """
 from typing import Optional
 
@@ -13,16 +13,31 @@ import pytorch_lightning as pl
 
 
 class MNISTDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32):
+    def __init__(self, data_dir: str = "./data", batch_size: int = 32):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.Normalize((0.1307,), (0.3081,))
+                                             ])
+
+    def prepare_data(self):
+        MNIST(self.data_dir, train=True, download=True)
+        MNIST(self.data_dir, train=False, download=True)
 
     def setup(self, stage: Optional[str] = None):
-        self.mnist_test = MNIST(self.data_dir, train=False)
-        #self.mnist_predict = MNIST(self.data_dir, train=False)
-        mnist_full = MNIST(self.data_dir, train=True)
-        self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000])
+
+        #Assign train/val datasets for use in dataloaders
+        if stage == "fit" or stage is None:
+            mnist_full = MNIST(self.data_dir, train=True, transform=self.transform)
+            self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000])
+
+        #Assign test dataset or use in dataloader
+        if stage == "test" or stage is None:
+            self.mnist_test = MNIST(self.data_dir, train=False, transform=self.transform)
+
+        #if stage == "predict" or stage is None:
+            #self.mnist_predict = MNIST(self.data_dir, train=False)
 
     def train_dataloader(self):
         return DataLoader(self.mnist_train, batch_size=self.batch_size)
@@ -40,15 +55,25 @@ class MNISTDataModule(pl.LightningDataModule):
         pass
 
 class PCAMDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32):
+    def __init__(self, data_dir: str = "./data", batch_size: int = 32, crop_size: int = 32):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
+        # TODO: normalization
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.CenterCrop(crop_size)
+                                             ])
 
     def setup(self, stage: Optional[str] = None):
-        self.pcam_test = PCAM(self.data_dir, split='test')
-        self.pcam_train = PCAM(self.data_dir, split='train')
-        self.pcam_val = PCAM(self.data_dir, split='val')
+
+        if stage == "fit" or stage is None:
+            self.pcam_train = PCAM(self.data_dir, split='train', transform=self.transform)
+
+        if stage == "validate" or stage == "fit" or stage is None:
+            self.pcam_val = PCAM(self.data_dir, split='val', transform=self.transform)
+
+        if stage == "test" or stage is None:
+            self.pcam_test = PCAM(self.data_dir, split='test', transform=self.transform)
 
     def train_dataloader(self):
         return DataLoader(self.pcam_train, batch_size=self.batch_size)
