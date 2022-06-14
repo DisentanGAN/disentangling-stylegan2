@@ -57,30 +57,19 @@ TODO: Connector class optimizes y to be equal to w.
 
 import pytorch_lightning as pl
 import torch
-
-from torch.nn import ModuleList
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
 from torchvision import transforms
+from torchvision.datasets import MNIST
 
-import matplotlib.pyplot as plt
-
-from defaultvalues import optim_conf, channels, default_args
-from util import (
-    requires_grad,
-    mixing_noise,
-    d_logistic_loss,
-    d_r1_loss,
-    g_nonsaturating_loss,
-    g_path_regularize,
-)
-from non_leaking import augment, AdaptiveAugment
-
-from mappingnetwork import MappingNetwork
-from generator import Generator
+from classifier import LinearClassifier
+from defaultvalues import channels, default_args, optim_conf
 from discriminator import Discriminator
 from encoder import Encoder
-from classifier import LinearClassifier
+from generator import Generator
+from mappingnetwork import MappingNetwork
+from non_leaking import AdaptiveAugment, augment
+from util import (d_logistic_loss, d_r1_loss, g_nonsaturating_loss,
+                  g_path_regularize, mixing_noise, requires_grad)
 
 
 class DisentangledSG(pl.LightningModule):
@@ -520,5 +509,13 @@ class DisentangledSG(pl.LightningModule):
         return DataLoader(
             self.training_data,                       
             batch_size=self.args['batch_size'],
-            #num_workers=self.args['dataloader_workers']
+            num_workers=self.args['dataloader_workers']
+        )
+
+        
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        return DataLoader(
+            self.validation_data,                       
+            batch_size=self.args['batch_size'],
+            num_workers=self.args['dataloader_workers']
         )
