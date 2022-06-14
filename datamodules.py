@@ -51,8 +51,8 @@ class MNISTDataModule(pl.LightningDataModule):
     #def predict_dataloader(self):
         #return DataLoader(self.mnist_predict, batch_size=self.batch_size)
 
-    def teardown(self, stage: Optional[str] = None):
-        pass
+    #def teardown(self, stage: Optional[str] = None):
+        #pass
 
 class PCAMDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "./data", batch_size: int = 32, crop_size: int = 32):
@@ -87,5 +87,5 @@ class PCAMDataModule(pl.LightningDataModule):
     #def predict_dataloader(self):
         #return DataLoader(self.pcam_predict, batch_size=self.batch_size)
 
-    def teardown(self, stage: Optional[str] = None):
-        pass
+    #def teardown(self, stage: Optional[str] = None):
+        #pass
