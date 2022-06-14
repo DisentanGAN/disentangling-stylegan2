@@ -64,6 +64,11 @@ class PCAMDataModule(pl.LightningDataModule):
                                              transforms.CenterCrop(crop_size)
                                              ])
 
+    def prepare_data(self):
+        PCAM(self.data_dir, split="train", download=True)
+        PCAM(self.data_dir, split="test", download=True)
+        PCAM(self.data_dir, split="val", download=True)
+
     def setup(self, stage: Optional[str] = None):
 
         if stage == "fit" or stage is None:
