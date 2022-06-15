@@ -11,7 +11,7 @@ from datamodules import MNISTDataModule, PCAMDataModule
 
 def train(parsed_args):
     # unite parsed and default args as dicts for DSG, override respective default values
-    hparams = default_args | vars(parsed_args)
+    hparams = {**default_args, **vars(parsed_args)}
 
     if parsed_args.ckpt:
         dsg = DisentangledSG.load_from_checkpoint(checkpoint_path=parsed_args.ckpt)
