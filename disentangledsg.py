@@ -55,6 +55,8 @@ TODO: Connector class optimizes y to be equal to w.
 
 """
 
+
+import wandb
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
@@ -157,58 +159,60 @@ class DisentangledSG(pl.LightningModule):
         self.optimize_consistency(batch)
         if self.classifier:
             self.optimize_classification(batch)
-    
-    
+
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and self.current_epoch % self.args['store_images_every'] == 0:
             self.log_images(batch)
 
         if not self.classifier:
             return
-        
+
         with torch.no_grad():
 
             images, labels = batch
             w = self.encoder(images)
             predicted_labels = self.classifier(w)
 
-            classification_loss = self.classifier_loss(predicted_labels, labels)
-            accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)/len(batch)
+            classification_loss = self.classifier_loss(
+                predicted_labels, labels)
+            accuracy = torch.sum(predicted_labels.argmax(
+                dim=1) == labels)/len(batch)
 
             self.log('classifier/validation/loss', classification_loss)
             self.log('classifier/validation/accuracy', accuracy)
 
     def log_images(self, batch) -> None:
         example_images = batch[0]
-        noise = [noise.type_as(example_images) for noise in self.example_data['noise']]
+        noise = [noise.type_as(example_images)
+                 for noise in self.example_data['noise']]
         z = [z.type_as(example_images) for z in self.example_data['z']]
-
-        if type(self.logger) == pl.loggers.wandb.WandbLogger:
-            self.logger.log_image(key='original images',
-                                  images=list(example_images))
 
         # reconstruct real images
         w = self.encoder(example_images)
-        images, _ = self.generator([w], noise=noise)
-
-        if type(self.logger) == pl.loggers.wandb.WandbLogger:
-            self.logger.log_image(
-                key='original images - reconstructed', images=list(images))
+        reconstructed_images, _ = self.generator([w], noise=noise)
 
         # generate from noise
         w = self.mapping(torch.stack(z)[0])
-        images, _ = self.generator([w], noise=noise)
-
-        if type(self.logger) == pl.loggers.wandb.WandbLogger:
-            self.logger.log_image(key='synthetic images', images=list(images))
+        synthetic_images, _ = self.generator([w], noise=noise)
 
         # reconstruct from noise
-        w = self.encoder(images)
-        images, _ = self.generator([w], noise=noise)
+        w = self.encoder(synthetic_images)#
+        reconstructed_synthetic_images, _ = self.generator([w], noise=noise)
 
-        if type(self.logger) == pl.loggers.wandb.WandbLogger:
-            self.logger.log_image(
-                key='synthetic images - reconstructed', images=list(images))
+        columns = ['real images', 'reconstructed images',
+                   'synthetic images', 'reconstructed synthetic images']
+
+        data = list(zip(
+            list(example_images),
+            list(reconstructed_images),
+            list(synthetic_images),
+            list(reconstructed_synthetic_images)
+        ))
+
+        # map every image to a wandb image
+        data = list(map(lambda row: list(map(lambda img: wandb.Image(img),row),),data))
+        self.logger.log_table(key='reconstructions',
+                              columns=columns, data=data)
 
     # def check_seperability(self):
     #     colors = ['red', 'green', 'blue', 'gray', 'yellow', 'cyan', 'orange', 'black', 'purple', 'greenyellow']
@@ -250,14 +254,13 @@ class DisentangledSG(pl.LightningModule):
 
             for opt in opts:
                 opt.zero_grad()
-            
+
             self.manual_backward(loss)
 
             for opt in opts:
                 opt.step()
-        
-        return inner
 
+        return inner
 
     def optimize_discrimination(self, batch, batch_idx):
         # default: do normal optimisation
@@ -314,7 +317,7 @@ class DisentangledSG(pl.LightningModule):
 
         self.log('r1/loss', r1_loss)
         self.log('regularization/loss', reg_loss)
-        
+
         return reg_loss
 
     def optimize_generation(self, batch, batch_idx):
@@ -370,7 +373,6 @@ class DisentangledSG(pl.LightningModule):
 
         return weighted_path_loss
 
-        
     def optimize_consistency(self, batch):
 
         real_img = batch[0]
@@ -392,7 +394,8 @@ class DisentangledSG(pl.LightningModule):
         w = self.encoder(images)
         predicted_labels = self.classifier(w)
         classification_loss = self.classifier_loss(predicted_labels, labels)
-        accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)/len(batch)
+        accuracy = torch.sum(predicted_labels.argmax(
+            dim=1) == labels)/len(batch)
 
         self.log('classifier/train/loss', classification_loss)
         self.log('classifier/train/accuracy', accuracy)
@@ -400,8 +403,8 @@ class DisentangledSG(pl.LightningModule):
         return classification_loss
 
     def configure_optimizers(self):
-        
-        ## INITALIZE THE OPTIMIZER
+
+        # INITALIZE THE OPTIMIZER
 
         generation_regularization_ratio = self.args['d_reg_every'] / (
             self.args['d_reg_every'] + 1)
@@ -436,16 +439,15 @@ class DisentangledSG(pl.LightningModule):
         optimizer = [generator_optimizer, discriminator_optimizer,
                      encoder_optimizer, mapping_optimizer]
 
-        ## CREATE LOOKUP DICTIONARY FOR THE OPTIMNIZERS
+        # CREATE LOOKUP DICTIONARY FOR THE OPTIMNIZERS
         self.optimizers = {
             self.mapping: mapping_optimizer,
             self.encoder: encoder_optimizer,
             self.generator: generator_optimizer,
             self.discriminator: discriminator_optimizer
         }
-        
 
-        ## IN CASE THAT A CLASSIFIER IS EMPLOYED ADD THE CLASSIFIER OPTIMIZER
+        # IN CASE THAT A CLASSIFIER IS EMPLOYED ADD THE CLASSIFIER OPTIMIZER
         if self.classifier:
             classifier_optimizer = self.optim_conf['classifier']['optimizer'](
                 self.classifier.parameters(),
@@ -454,20 +456,25 @@ class DisentangledSG(pl.LightningModule):
             optimizer.append(classifier_optimizer)
             self.optimizers[self.classifier] = classifier_optimizer
 
-        ## CONFIGURE WHICH OPTIMIZER SHOULD OPTIMIZE WHICH FUNCTION
-        self.optimize_enc_and_disc = self.apply_correct_optimizer(self.optimize_enc_and_disc, [self.encoder, self.discriminator])
-        self.regularize_discrimination = self.apply_correct_optimizer(self.regularize_discrimination, [self.encoder, self.discriminator])
+        # CONFIGURE WHICH OPTIMIZER SHOULD OPTIMIZE WHICH FUNCTION
+        self.optimize_enc_and_disc = self.apply_correct_optimizer(
+            self.optimize_enc_and_disc, [self.encoder, self.discriminator])
+        self.regularize_discrimination = self.apply_correct_optimizer(
+            self.regularize_discrimination, [self.encoder, self.discriminator])
 
-        self.optimize_consistency = self.apply_correct_optimizer(self.optimize_consistency, [self.generator, self.encoder, self.mapping])
+        self.optimize_consistency = self.apply_correct_optimizer(
+            self.optimize_consistency, [self.generator, self.encoder, self.mapping])
 
-        self.optimize_map_and_gen = self.apply_correct_optimizer(self.optimize_map_and_gen, [self.mapping, self.generator])
-        self.regularize_generation = self.apply_correct_optimizer(self.regularize_generation, [self.mapping, self.generator])
+        self.optimize_map_and_gen = self.apply_correct_optimizer(
+            self.optimize_map_and_gen, [self.mapping, self.generator])
+        self.regularize_generation = self.apply_correct_optimizer(
+            self.regularize_generation, [self.mapping, self.generator])
 
         if self.classifier:
-            self.optimize_classification = self.apply_correct_optimizer(self.optimize_classification, [self.classifier, self.encoder])
+            self.optimize_classification = self.apply_correct_optimizer(
+                self.optimize_classification, [self.classifier, self.encoder])
 
         return optimizer
-
 
     # self.example_data = {
     #     'images': [self.training_data[i][0] for i in range(self.args['num_example_images'])],
