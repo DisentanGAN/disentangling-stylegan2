@@ -173,7 +173,7 @@ class DisentangledSG(pl.LightningModule):
             predicted_labels = self.classifier(w)
 
             classification_loss = self.classifier_loss(predicted_labels, labels)
-            accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)
+            accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)/len(batch)
 
             self.log('classifier/validation/loss', classification_loss)
             self.log('classifier/validation/accuracy', accuracy)
@@ -392,7 +392,7 @@ class DisentangledSG(pl.LightningModule):
         w = self.encoder(images)
         predicted_labels = self.classifier(w)
         classification_loss = self.classifier_loss(predicted_labels, labels)
-        accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)
+        accuracy =  torch.sum(predicted_labels.argmax(dim=1) == labels)/len(batch)
 
         self.log('classifier/train/loss', classification_loss)
         self.log('classifier/train/accuracy', accuracy)
