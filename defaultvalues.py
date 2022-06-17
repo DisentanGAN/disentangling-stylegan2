@@ -48,8 +48,8 @@ optim_conf = {
 
 default_args = {
     "r1": 10,
-    "path_regularize": 2, 
-    "path_batch_shrink": 2, 
+    "path_regularize": 2,
+    "path_batch_shrink": 2,
     "d_reg_every": 16,
     "g_reg_every": 4,
     "mixing": 0.9,
