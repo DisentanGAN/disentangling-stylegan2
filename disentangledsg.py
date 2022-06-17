@@ -159,13 +159,27 @@ class DisentangledSG(pl.LightningModule):
         self.optimize_consistency(batch)
         if self.classifier:
             self.optimize_classification(batch)
+        return {}
+
+    def on_train_epoch_end(self):
+        if self.current_epoch == 0:
+            return
+
+        ckpt_path = self.args['checkpoint_path']
+        run_name = self.args.get('run_name', 'stylegan2')
+        
+        self.trainer.save_checkpoint(f'{ckpt_path}/{run_name}-last.ckpt')
+
+        if self.current_epoch % self.args['save_checkpoint_every'] == 0:
+            self.trainer.save_checkpoint(f'{ckpt_path}/{run_name}-epoch-{self.current_epoch:03d}.ckpt')
+    
 
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and self.current_epoch % self.args['store_images_every'] == 0:
             self.log_images(batch)
 
         if not self.classifier:
-            return
+            return {}
 
         with torch.no_grad():
 
@@ -178,10 +192,33 @@ class DisentangledSG(pl.LightningModule):
             accuracy = torch.sum(predicted_labels.argmax(
                 dim=1) == labels)/len(batch)
 
-            self.log('classifier/validation/loss', classification_loss)
-            self.log('classifier/validation/accuracy', accuracy)
+            self.log('classifier_validation_loss', classification_loss)
+            self.log('classifier_validation_accuracy', accuracy)
+
+            return {
+                'classifier_validation_loss': classification_loss, 
+                'classifier_validation_accuracy': accuracy
+                }
+
+    def validation_epoch_end(self, outputs):
+        if not self.classifier:
+            return
+        
+        avg_loss, avg_accuracy = 0, 0
+        for out in outputs:
+            avg_loss += out['classifier_validation_loss']
+            avg_accuracy += out['classifier_validation_accuracy']
+
+        avg_loss /= len(outputs)
+        avg_accuracy /= len(outputs)
+
+        self.log('avg_classifier_validation_loss', avg_loss)
+        self.log('classifier_validation_accuracy', avg_accuracy)
 
     def log_images(self, batch) -> None:
+        if type(self.logger) != pl.loggers.wandb.WandbLogger:
+            return
+
         example_images = batch[0]
         noise = [noise.type_as(example_images)
                  for noise in self.example_data['noise']]
@@ -290,9 +327,9 @@ class DisentangledSG(pl.LightningModule):
         real_pred = self.discriminator(self.encoder(real_img_aug))
         d_loss = d_logistic_loss(real_pred, fake_pred)
 
-        self.log('discriminator/loss', d_loss)
-        self.log('discriminator/real_score', real_pred.mean())
-        self.log('discriminator/fake_score', fake_pred.mean())
+        self.log('discriminator_loss', d_loss)
+        self.log('discriminator_real_score', real_pred.mean())
+        self.log('discriminator_fake_score', fake_pred.mean())
 
         if self.args['augment'] and self.args['augment_p'] == 0:
             self.ada_augment.tune(real_pred)
@@ -315,8 +352,8 @@ class DisentangledSG(pl.LightningModule):
         reg_loss = (self.args['r1'] / 2 * r1_loss *
                     self.args['d_reg_every'] + 0 * real_pred[0])[0]
 
-        self.log('r1/loss', r1_loss)
-        self.log('regularization/loss', reg_loss)
+        self.log('r1_loss', r1_loss)
+        self.log('regularization_loss', reg_loss)
 
         return reg_loss
 
@@ -343,7 +380,7 @@ class DisentangledSG(pl.LightningModule):
         fake_pred = self.discriminator(self.encoder(fake_img))
         g_loss = g_nonsaturating_loss(fake_pred)
 
-        self.log('generator/loss', g_loss)
+        self.log('generator_loss', g_loss)
 
         return g_loss
 
@@ -367,9 +404,9 @@ class DisentangledSG(pl.LightningModule):
         if self.args['path_batch_shrink']:
             weighted_path_loss += 0 * fake_img[0, 0, 0, 0]
 
-        self.log('path/loss', path_loss)
-        self.log('path/length', path_lengths.mean())
-        self.log('path/weighted_path_loss', weighted_path_loss)
+        self.log('path_loss', path_loss)
+        self.log('path_length', path_lengths.mean())
+        self.log('path_weighted_path_loss', weighted_path_loss)
 
         return weighted_path_loss
 
@@ -384,7 +421,7 @@ class DisentangledSG(pl.LightningModule):
 
         consistency_loss = (w_z - self.encoder(fake_img)).pow(2).mean()
 
-        self.log('consistency/loss', consistency_loss)
+        self.log('consistency_loss', consistency_loss)
 
         return consistency_loss
 
@@ -397,8 +434,8 @@ class DisentangledSG(pl.LightningModule):
         accuracy = torch.sum(predicted_labels.argmax(
             dim=1) == labels)/len(batch)
 
-        self.log('classifier/train/loss', classification_loss)
-        self.log('classifier/train/accuracy', accuracy)
+        self.log('classifier_train_loss', classification_loss)
+        self.log('classifier_train_accuracy', accuracy)
 
         return classification_loss
 

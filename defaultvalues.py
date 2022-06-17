@@ -67,4 +67,6 @@ default_args = {
     "dataloader_workers": 2,
     "classifier": "Linear",
     "classifier_classes": 10,
+    "checkpoint_path": 'checkpoints/',
+    "save_checkpoint_every": 20,
 }
