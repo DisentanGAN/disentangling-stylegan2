@@ -14,7 +14,8 @@ def train(parsed_args):
     hparams = {**default_args, **vars(parsed_args)}
 
     if parsed_args.ckpt:
-        dsg = DisentangledSG.load_from_checkpoint(checkpoint_path=parsed_args.ckpt)
+        dsg = DisentangledSG.load_from_checkpoint(
+            checkpoint_path=parsed_args.ckpt)
     else:
         dsg = DisentangledSG(hparams)
 
@@ -27,19 +28,21 @@ def train(parsed_args):
     trainer = pl.Trainer(
         ## DEVICE ##
         gpus=parsed_args.gpu,
-        #strategy='ddp',
-        ## LOGGING AND CALLBACKS
-        #callbacks=[],
-        #logger=wandb_logger,
+        # strategy='ddp',
+        # LOGGING AND CALLBACKS
+        # callbacks=[],
+        # logger=wandb_logger,
         ## TRAIN DURATION ##
         max_epochs=parsed_args.max_epochs,
-        #max_time="00:12:00:00",
+        # max_time="00:12:00:00",
         ## DEBUG OPTIONS ##
-        #fast_dev_run=1,
+        # fast_dev_run=1,
     )
 
     trainer.fit(dsg, datamodule=datamodule)
-    trainer.save_checkpoint(f"checkpoint/{parsed_args.run_name}_{parsed_args.dataset}.ckpt")
+    trainer.save_checkpoint(
+        f"checkpoint/{parsed_args.run_name}_{parsed_args.dataset}.ckpt")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DisentanGAN training script")
@@ -103,11 +106,16 @@ if __name__ == "__main__":
         default=256,
         help="probability update interval of the adaptive augmentation",
     )
-    parser.add_argument("--latent", type=int, default=128, help="style space latent dimensionality")
-    parser.add_argument("--image_size", type=int, default=32, help="img size to resize to")
-    parser.add_argument("--n_mlp", type=int, default=8, help="number of layer in the mapping network")
-    parser.add_argument("--store_images_every", type=int, default=1, help="store images per n epochs")
-    parser.add_argument("--seed", type=int, default=42, help="seed to reproduce experiments")
+    parser.add_argument("--latent", type=int, default=128,
+                        help="style space latent dimensionality")
+    parser.add_argument("--image_size", type=int,
+                        default=32, help="img size to resize to")
+    parser.add_argument("--n_mlp", type=int, default=8,
+                        help="number of layer in the mapping network")
+    parser.add_argument("--store_images_every", type=int,
+                        default=1, help="store images per n epochs")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="seed to reproduce experiments")
     parser.add_argument(
         "--batch_size", type=int, default=32, help="batch sizes for each gpus"
     )
@@ -146,7 +154,8 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, help="Experiment name")
     parser.add_argument("--run_name", type=str, help="Run name")
     parser.add_argument("--dataset", type=str, help="dataset to train on")
-    parser.add_argument("--logger", type=str, default="wandb", help="logger to be used")
+    parser.add_argument("--logger", type=str,
+                        default="wandb", help="logger to be used")
     parsed_args = parser.parse_args()
     ### PARSED ARGUMENTS END ###
 
