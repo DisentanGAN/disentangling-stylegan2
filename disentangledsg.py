@@ -59,11 +59,8 @@ TODO: Connector class optimizes y to be equal to w.
 import wandb
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import MNIST
 
-from classifier import LinearClassifier
+from classifier import LinearClassifier, NonLinearClassifier
 from defaultvalues import channels, default_args, optim_conf
 from discriminator import Discriminator
 from encoder import Encoder
@@ -107,9 +104,12 @@ class DisentangledSG(pl.LightningModule):
             self.classifier = LinearClassifier(
                 self.args['latent'], self.args['classifier_classes'])
             self.classifier_loss = torch.nn.CrossEntropyLoss()
-        elif self.args['classifier'] == 'Resnet':
-            self.classifier = None
+
+        elif self.args['classifier'] == 'NonLinear':
+            self.classifier = NonLinearClassifier(
+                self.args['latent'], self.args['classifier_classes'])
             self.classifier_loss = torch.nn.CrossEntropyLoss()
+            
         else:
             self.classifier = None
 

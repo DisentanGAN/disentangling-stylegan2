@@ -9,29 +9,32 @@ class LinearClassifier(nn.Module):
 
     def forward(self, x):
         x = self.layer(x)
-        x = nn.functional.softmax(x, dim=1)
+        x = nn.functional.sigmoid(x, dim=1)
         return x
 
 
-# class AdaptiveClassifier(nn.Module):
-#     def __init__(self, in_dim, out_dim, channels):
-#         super().__init__()
-#         self.layers = nn.ModuleList()
+class NonLinearClassifier(nn.Module):
+    def __init__(self, in_dim, out_dim):
+        super().__init__()
+        self.layers = nn.ModuleList()
+        self.layers.append(
+            nn.Linear(in_dim, 128)
+        )
+
+        for _ in range(3):
+            self.layers.append(
+                nn.Linear(128, 128)
+            )
+
+        self.classification = nn.Linear(128, out_dim)
         
-#         self.layers.append(
-#             nn.Linear(in_dim, channels[0]))
-#         for i in range(len(channels) - 1):
-#             self.layers.append(
-#                 nn.Linear(channels[i], out_features=channels[i+1]))
 
-#         self.classification = nn.Linear(channels[-1], out_dim)
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+            x = nn.functional.relu(x)
 
-#     def forward(self, x):
-#         for layer in self.layers:
-#             x = layer(x)
-#             x = nn.functional.relu(x)
-        
-#         x = self.classification(x)
-#         x = nn.functional.softmax(x, dim=1)
+        x = self.classification(x)
+        x = nn.functional.sigmoid(x, dim=1)
 
-#         return x
+        return x
