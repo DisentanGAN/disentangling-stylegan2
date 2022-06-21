@@ -16,11 +16,10 @@ dsg = DisentangledSG(default_args)
 mnist = MNISTDataModule()
 
 trainer = pl.Trainer(
-    #default_root_dir='/netscratch',
+    default_root_dir='/netscratch',
     gpus=[0],
     logger=wandb_logger,
-    limit_train_batches=0.01, limit_val_batches=0.01,
-    max_epochs=30,
+    max_time="00:06:00:00"
     )
 
 trainer.fit(dsg, mnist)

@@ -19,7 +19,8 @@ def train(parsed_args):
     else:
         dsg = DisentangledSG(hparams)
 
-    #wandb_logger = WandbLogger(project="disentangling-gan")
+    wandb_logger = WandbLogger(project="disentangling-gan")
+    default_args['run_name'] = wandb_logger.version
 
     datasets = {'mnist': MNISTDataModule,
                 'pcam': PCAMDataModule}
@@ -31,9 +32,10 @@ def train(parsed_args):
         # strategy='ddp',
         # LOGGING AND CALLBACKS
         # callbacks=[],
-        # logger=wandb_logger,
+        logger=wandb_logger,
         ## TRAIN DURATION ##
         max_epochs=parsed_args.max_epochs,
+        max_time="00:06:00:00",
         # max_time="00:12:00:00",
         ## DEBUG OPTIONS ##
         # fast_dev_run=1,

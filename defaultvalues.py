@@ -10,10 +10,10 @@ import torch
 
 channel_multiplier = 2
 channels = {
-    4: 32,
-    8: 32,
-    16: 16,
-    32: 16,
+    4: 512,
+    8: 512,
+    16: 256,
+    32: 256,
     # 64: 256 * channel_multiplier,
     # 128: 128 * channel_multiplier,
     # 256: 64 * channel_multiplier,
@@ -65,8 +65,9 @@ default_args = {
     "seed": 42,
     "batch_size": 32,
     "dataloader_workers": 2,
-    "classifier": "Linear",
+    "classifier": "None",
     "classifier_classes": 10,
-    "checkpoint_path": 'checkpoints/',
-    "save_checkpoint_every": 20,
+    #"checkpoint_path": 'checkpoints/',
+    "checkpoint_path": '/netscratch/checkpoints/',
+    "save_checkpoint_every": 4,
 }
