@@ -140,8 +140,6 @@ class DisentangledSG(pl.LightningModule):
         d = self.discriminator(y)
 
         # TODO: what is the latent value in x[1]?
-
-        # TODO: how to insert downstream tasks here?
         return d
 
     def set_trainable(self, *trainable_models):
@@ -261,9 +259,9 @@ class DisentangledSG(pl.LightningModule):
         labels = []
 
         with torch.no_grad():
-            for val in self.val_dataloader():
-                x = val[0]
-                y = val[1].to('cpu')
+            for val in self.trainer.datamodule.val_dataloader():
+                x = val[0].to(self.device)
+                y = val[1]
                 w = self.encoder(x).to('cpu')
 
                 latents.append(w)
@@ -274,34 +272,7 @@ class DisentangledSG(pl.LightningModule):
         embedding = umap.UMAP().fit_transform(W)
         c = [colors[i] for i in Y]
         plt.scatter(embedding[:, 0], embedding[:, 1], c=c, s=0.1)
-        self.log('umap', plt)
-
-    #     loader = DataLoader(
-    #             self.training_data,
-    #             batch_size=self.args['batch_size']
-    #         )
-    #     with torch.no_grad():
-    #         latent_representations = []
-    #         labels = []
-    #         for img, label in loader:
-    #             img = img.to(self.device)
-    #             latent_representations.append(self.encoder(img))
-    #             labels.append(label)
-    #         w = torch.concat(latent_representations, dim=0).cpu().numpy()
-    #         label = torch.concat(labels, dim=0).numpy()
-    #         print('UMAP')
-    #         reducer = umap.UMAP()
-    #         print('UMAP 1')
-    #         embedding = reducer.fit_transform(w[:1000])
-    #         print('UMAP 2')
-    #         c = [colors[i] for i in label[:1000]]
-    #         print('UMAP 3')
-    #         plt.scatter(embedding[:100, 0], embedding[:100, 1], c=c)
-    #         print('UMAP 4')
-    #         plt.gca().set_aspect('equal', 'datalim')
-    #         plt.show()
-    #         print('UMAP 5')
-    #         # self.log('umap', plt)
+        self.log('umap', wandb.Image(plt))
 
     def apply_correct_optimizer(self, func, modules):
 
@@ -534,9 +505,3 @@ class DisentangledSG(pl.LightningModule):
                 self.optimize_classification, [self.classifier, self.encoder])
 
         return optimizer
-
-    # self.example_data = {
-    #     'images': [self.training_data[i][0] for i in range(self.args['num_example_images'])],
-    #     'noise': self.generator.make_noise(),
-    #     'z': [torch.randn(self.args['num_example_images'], self.args['latent'])]
-    # }
