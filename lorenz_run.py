@@ -3,7 +3,6 @@ from pytorch_lightning.loggers import WandbLogger
 
 from disentangledsg import DisentangledSG
 from defaultvalues import default_args
-from pytorch_lightning.callbacks import ModelCheckpoint
 from datamodules import MNISTDataModule
 
 
