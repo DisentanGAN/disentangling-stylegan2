@@ -9,7 +9,6 @@ class LinearClassifier(nn.Module):
 
     def forward(self, x):
         x = self.layer(x)
-        x = nn.functional.sigmoid(x)
         return x
 
 
@@ -35,6 +34,5 @@ class NonLinearClassifier(nn.Module):
             x = nn.functional.relu(x)
 
         x = self.classification(x)
-        x = nn.functional.sigmoid(x)
 
         return x
