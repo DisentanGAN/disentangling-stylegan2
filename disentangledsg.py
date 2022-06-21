@@ -272,7 +272,7 @@ class DisentangledSG(pl.LightningModule):
         embedding = umap.UMAP().fit_transform(W)
         c = [colors[i] for i in Y]
         plt.scatter(embedding[:, 0], embedding[:, 1], c=c, s=0.1)
-        self.log('umap', wandb.Image(plt))
+        wandb.log({"umap": wandb.Image(plt)})
 
     def apply_correct_optimizer(self, func, modules):
 
