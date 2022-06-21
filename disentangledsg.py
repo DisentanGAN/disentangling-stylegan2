@@ -56,10 +56,12 @@ TODO: Connector class optimizes y to be equal to w.
 """
 
 
-import wandb
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
+import umap.umap_ as umap
 
+import wandb
 from classifier import LinearClassifier, NonLinearClassifier
 from defaultvalues import channels, default_args, optim_conf
 from discriminator import Discriminator
@@ -177,6 +179,7 @@ class DisentangledSG(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and self.current_epoch % self.args['store_images_every'] == 0:
             self.log_images(batch)
+            self.check_seperability()
 
         if not self.classifier:
             return {}
@@ -251,8 +254,27 @@ class DisentangledSG(pl.LightningModule):
         self.logger.log_table(key=f'Epoch {self.current_epoch}',
                               columns=columns, data=data)
 
-    # def check_seperability(self):
-    #     colors = ['red', 'green', 'blue', 'gray', 'yellow', 'cyan', 'orange', 'black', 'purple', 'greenyellow']
+    def check_seperability(self):
+        colors = ['red', 'green', 'blue', 'gray', 'yellow', 'cyan', 'orange', 'black', 'purple', 'greenyellow']
+
+        latents = []
+        labels = []
+
+        with torch.no_grad():
+            for val in self.val_dataloader():
+                x = val[0]
+                y = val[1].to('cpu')
+                w = self.encoder(x).to('cpu')
+
+                latents.append(w)
+                labels.append(y)
+        
+        W = torch.concat(latents, dim=0).numpy()
+        Y = torch.concat(labels, dim=0).numpy()
+        embedding = umap.UMAP().fit_transform(W)
+        c = [colors[i] for i in Y]
+        plt.scatter(embedding[:, 0], embedding[:, 1], c=c, s=0.1)
+        self.log('umap', plt)
 
     #     loader = DataLoader(
     #             self.training_data,
