@@ -65,9 +65,9 @@ default_args = {
     "seed": 42,
     "batch_size": 32,
     "dataloader_workers": 2,
-    "classifier": "NonLinear",
+    "classifier": "Linear",
     "classifier_classes": 10,
-    #"checkpoint_path": 'checkpoints/',
-    "checkpoint_path": '/netscratch/checkpoints/',
+    "checkpoint_path": 'checkpoints/',
+    #"checkpoint_path": '/netscratch/checkpoints/',
     "save_checkpoint_every": 4,
 }
