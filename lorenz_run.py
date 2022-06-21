@@ -15,7 +15,7 @@ dsg = DisentangledSG(default_args)
 mnist = MNISTDataModule()
 
 trainer = pl.Trainer(
-    default_root_dir='/netscratch',
+    # default_root_dir='/netscratch',
     gpus=[0],
     logger=wandb_logger,
     max_time="00:06:00:00"

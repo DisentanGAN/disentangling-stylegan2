@@ -190,7 +190,7 @@ class DisentangledSG(pl.LightningModule):
             classification_loss = self.classifier_loss(
                 predicted_labels, labels)
             accuracy = torch.sum(predicted_labels.argmax(
-                dim=1) == labels)/len(batch)
+                dim=1) == labels)/len(batch[0])
 
             self.log('classifier_validation_loss', classification_loss)
             self.log('classifier_validation_accuracy', accuracy)
@@ -248,7 +248,7 @@ class DisentangledSG(pl.LightningModule):
 
         # map every image to a wandb image
         data = list(map(lambda row: list(map(lambda img: wandb.Image(img),row),),data))
-        self.logger.log_table(key='reconstructions',
+        self.logger.log_table(key=f'Epoch {self.current_epoch}',
                               columns=columns, data=data)
 
     # def check_seperability(self):
@@ -432,7 +432,7 @@ class DisentangledSG(pl.LightningModule):
         predicted_labels = self.classifier(w)
         classification_loss = self.classifier_loss(predicted_labels, labels)
         accuracy = torch.sum(predicted_labels.argmax(
-            dim=1) == labels)/len(batch)
+            dim=1) == labels)/len(batch[0])
 
         self.log('classifier_train_loss', classification_loss)
         self.log('classifier_train_accuracy', accuracy)

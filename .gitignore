@@ -1,5 +1,5 @@
 # model checkpoints
-checkpoint
+checkpoint*
 disentangling-gan
 lightning_logs
 
