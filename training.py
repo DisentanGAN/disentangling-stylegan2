@@ -5,37 +5,34 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
 from disentangledsg import DisentangledSG
-from defaultvalues import default_args
+from defaultvalues import default_args, default_args_help
 from datamodules import MNISTDataModule, PCAMDataModule
 
+def train(hparams):
 
-def train(parsed_args):
-    # unite parsed and default args as dicts for DSG, override respective default values
-    hparams = {**default_args, **vars(parsed_args)}
-
-    if parsed_args.ckpt:
+    if hparams.checkpoint_path:
         dsg = DisentangledSG.load_from_checkpoint(
-            checkpoint_path=parsed_args.ckpt)
+            checkpoint_path=hparams.checkpoint_path)
     else:
-        dsg = DisentangledSG(hparams)
+        dsg = DisentangledSG(vars(hparams))
 
     wandb_logger = WandbLogger(project="disentangling-gan")
-    default_args['run_name'] = wandb_logger.version
+    hparams.run_name = wandb_logger.version
 
     datasets = {'mnist': MNISTDataModule,
                 'pcam': PCAMDataModule}
-    datamodule = datasets[parsed_args.dataset]()
+    datamodule = datasets[hparams.dataset]()
 
     trainer = pl.Trainer(
         ## DEVICE ##
-        gpus=parsed_args.gpu,
+        gpus=hparams.gpu,
         # strategy='ddp',
         # LOGGING AND CALLBACKS
         # callbacks=[],
         logger=wandb_logger,
         ## TRAIN DURATION ##
-        max_epochs=parsed_args.max_epochs,
-        max_time="00:06:00:00",
+        #max_epochs=hparams.max_epochs,
+        max_time=hparams.max_time,
         # max_time="00:12:00:00",
         ## DEBUG OPTIONS ##
         # fast_dev_run=1,
@@ -43,122 +40,48 @@ def train(parsed_args):
 
     trainer.fit(dsg, datamodule=datamodule)
     trainer.save_checkpoint(
-        f"checkpoint/{parsed_args.run_name}_{parsed_args.dataset}.ckpt")
+        f"checkpoint/{hparams.run_name}_{hparams.dataset}.ckpt")
 
-
-if __name__ == "__main__":
+def setup_default_parser_args():
     parser = argparse.ArgumentParser(description="DisentanGAN training script")
 
-    ### PARSED ARGUMENTS ###
-    ## DEFAULT ARGS ##
-    parser.add_argument(
-        "--r1", type=float, default=10, help="weight of the r1 regularization"
-    )
-    parser.add_argument(
-        "--path_regularize",
-        type=float,
-        default=2,
-        help="weight of the path length regularization",
-    )
-    parser.add_argument(
-        "--path_batch_shrink",
-        type=int,
-        default=2,
-        help="batch size reducing factor for the path length regularization (reduce memory consumption)",
-    )
-    parser.add_argument(
-        "--d_reg_every",
-        type=int,
-        default=16,
-        help="interval of applying r1 regularization",
-    )
-    parser.add_argument(
-        "--g_reg_every",
-        type=int,
-        default=4,
-        help="interval of applying path length regularization",
-    )
-    parser.add_argument(
-        "--mixing", type=float, default=0.9, help="probability of latent code mixing"
-    )
-    parser.add_argument(
-        "--augment", action="store_true", help="apply non leaking augmentation"
-    )
-    parser.add_argument(
-        "--augment_p",
-        type=float,
-        default=0,
-        help="probability of applying augmentation. 0 = use adaptive augmentation",
-    )
-    parser.add_argument(
-        "--ada_target",
-        type=float,
-        default=0.6,
-        help="target augmentation probability for adaptive augmentation",
-    )
-    parser.add_argument(
-        "--ada_length",
-        type=int,
-        default=500000,
-        help="target duration to reach augmentation probability for adaptive augmentation",
-    )
-    parser.add_argument(
-        "--ada_every",
-        type=int,
-        default=256,
-        help="probability update interval of the adaptive augmentation",
-    )
-    parser.add_argument("--latent", type=int, default=128,
-                        help="style space latent dimensionality")
-    parser.add_argument("--image_size", type=int,
-                        default=32, help="img size to resize to")
-    parser.add_argument("--n_mlp", type=int, default=8,
-                        help="number of layer in the mapping network")
-    parser.add_argument("--store_images_every", type=int,
-                        default=1, help="store images per n epochs")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="seed to reproduce experiments")
-    parser.add_argument(
-        "--batch_size", type=int, default=32, help="batch sizes for each gpus"
-    )
-    parser.add_argument(
-        "--dataloader_workers", type=int, default=2, help="number of workers for data loaders"
-    )
-    parser.add_argument(
-        "--classifier", type=str, default="Linear", help="classifier to be used"
-    )
-    parser.add_argument(
-        "--classifier_classes", type=int, default=10, help="number of classes for the classifier"
-    )
+    for key in default_args.keys():
+        dvalue = default_args[key]
+        # store bool values properly
+        if type(dvalue) == bool:# and dvalue == False:
+            parser.add_argument(
+                f"--{key}",
+                action="store_true" if dvalue == False else "store_false",
+                help=default_args_help[key]
+            )
+        #elif type(dvalue) == bool and dvalue == True:
+        #    parser.add_argument(
+        #        f"--{key}",
+        #        action="store_false",
+        #        help=default_args_help[key]
+        #    )
+        # store other values
+        else:
+            parser.add_argument(
+                f"--{key}",
+                type=type(default_args[key]),
+                default=default_args[key],
+                help=default_args_help[key]
+            )
 
-    ## NON-DEFAULT ARGS ##
-    # arguments not contained in defaultvalues.py
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        default=None,
-        help="path to the checkpoint to resume training",
-    )
-    parser.add_argument(
-        "--channel_multiplier",
-        type=int,
-        default=2,
-        help="channel multiplier factor for the model. config-f = 2, else = 1",
-    )
-    parser.add_argument(
-        "--local_rank", type=int, default=0, help="local rank for distributed training"
-    )
-    parser.add_argument(
-        "--max_epochs", type=int, default=100, help="max training epochs"
-    )
+    return parser
 
-    parser.add_argument("--gpu", type=str, help="GPU ID(s)")
-    parser.add_argument("--name", type=str, help="Experiment name")
-    parser.add_argument("--run_name", type=str, help="Run name")
+def setup_non_default_args(parser):
+    parser.add_argument("--max_epochs", type=int, default=100, help="max training epochs")
+    parser.add_argument("--max_time", type=str, default="00:04:00:00", help="max training time")
+    parser.add_argument("--gpu", type=str, default="1", help="GPU ID(s)")
+    parser.add_argument("--run_name", type=str, default=None, help="Run name")
     parser.add_argument("--dataset", type=str, help="dataset to train on")
-    parser.add_argument("--logger", type=str,
-                        default="wandb", help="logger to be used")
-    parsed_args = parser.parse_args()
-    ### PARSED ARGUMENTS END ###
+    #parser.add_argument("--logger", type=str, default="wandb", help="logger to be used")
 
-    train(parsed_args)
+if __name__ == "__main__":
+    parser = setup_default_parser_args()
+    setup_non_default_args(parser)
+    hparams = parser.parse_args()
+
+    #train(hparams)

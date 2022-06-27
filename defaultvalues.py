@@ -71,3 +71,28 @@ default_args = {
     #"checkpoint_path": '/netscratch/checkpoints/',
     "save_checkpoint_every": 4,
 }
+# help strings for argparser
+default_args_help = {
+    "r1": "weight of the r1 regularization",
+    "path_regularize": "weight of the path length regularization",
+    "path_batch_shrink": "batch size reducing factor for the path length regularization (reduce memory consumption)",
+    "d_reg_every": "interval of applying r1 regularization",
+    "g_reg_every": "interval of applying path length regularization",
+    "mixing": "probability of latent code mixing",
+    "augment": "apply non leaking augmentation",
+    "augment_p": "probability of applying augmentation. 0 = use adaptive augmentation",
+    "ada_target": "target augmentation probability for adaptive augmentation",
+    "ada_length": "target duration to reach augmentation probability for adaptive augmentation",
+    "ada_every": "probability update interval of the adaptive augmentation",
+    "latent": "style space latent dimensionality",
+    "image_size": "img size to resize to",
+    "n_mlp": "number of layer in the mapping network",
+    "store_images_every": "store images per n epochs",
+    "seed": "seed to reproduce experiments",
+    "batch_size": "batch sizes for each gpus",
+    "dataloader_workers": "number of workers for data loaders",
+    "classifier": "classifier to be used",
+    "classifier_classes": "number of classes for the classifier",
+    "checkpoint_path": "path to the checkpoint to resume training",
+    "save_checkpoint_every": "interval for saving checkpoints",
+}
