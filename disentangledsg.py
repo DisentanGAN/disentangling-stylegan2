@@ -56,12 +56,13 @@ TODO: Connector class optimizes y to be equal to w.
 """
 
 
-import matplotlib.pyplot as plt
+import wandb
 import pytorch_lightning as pl
 import torch
-import umap.umap_ as umap
+import umap
+import matplotlib.pyplot as plt
 
-import wandb
+from matplotlib.colors import ListedColormap
 from classifier import LinearClassifier, NonLinearClassifier
 from defaultvalues import channels, default_args, optim_conf
 from discriminator import Discriminator
@@ -139,7 +140,6 @@ class DisentangledSG(pl.LightningModule):
         y = self.encoder(x[0])
         d = self.discriminator(y)
 
-        # TODO: what is the latent value in x[1]?
         return d
 
     def set_trainable(self, *trainable_models):
@@ -166,8 +166,8 @@ class DisentangledSG(pl.LightningModule):
             return
 
         ckpt_path = self.args['checkpoint_path']
-        run_name = self.args.get('run_name', 'stylegan2')
-        
+        run_name = self.args['dataset'] + '-' + self.args['classifier'] + '-' + self.args['run_name']
+               
         self.trainer.save_checkpoint(f'{ckpt_path}/{run_name}-last.ckpt')
 
         if self.current_epoch % self.args['save_checkpoint_every'] == 0:
@@ -183,7 +183,6 @@ class DisentangledSG(pl.LightningModule):
             return {}
 
         with torch.no_grad():
-
             images, labels = batch
             w = self.encoder(images)
             predicted_labels = self.classifier(w)
@@ -191,7 +190,7 @@ class DisentangledSG(pl.LightningModule):
             classification_loss = self.classifier_loss(
                 predicted_labels, labels)
             accuracy = torch.sum(predicted_labels.argmax(
-                dim=1) == labels)/len(batch[0])
+                dim=1) == labels)/self.args['batch_size']
 
             self.log('classifier_validation_loss', classification_loss)
             self.log('classifier_validation_accuracy', accuracy)
@@ -220,6 +219,7 @@ class DisentangledSG(pl.LightningModule):
         if type(self.logger) != pl.loggers.wandb.WandbLogger:
             return
 
+        # this creates the data
         example_images = batch[0]
         noise = [noise.type_as(example_images)
                  for noise in self.example_data['noise']]
@@ -246,33 +246,31 @@ class DisentangledSG(pl.LightningModule):
             list(synthetic_images),
             list(reconstructed_synthetic_images)
         ))
-
-        # map every image to a wandb image
-        data = list(map(lambda row: list(map(lambda img: wandb.Image(img),row),),data))
-        self.logger.log_table(key=f'Epoch {self.current_epoch}',
-                              columns=columns, data=data)
-
-    def check_seperability(self):
-        colors = ['red', 'green', 'blue', 'gray', 'yellow', 'cyan', 'orange', 'black', 'purple', 'greenyellow']
-
-        latents = []
-        labels = []
-
-        with torch.no_grad():
-            for val in self.trainer.datamodule.val_dataloader():
-                x = val[0].to(self.device)
-                y = val[1]
-                w = self.encoder(x).to('cpu')
-
-                latents.append(w)
-                labels.append(y)
         
-        W = torch.concat(latents, dim=0).numpy()
-        Y = torch.concat(labels, dim=0).numpy()
-        embedding = umap.UMAP().fit_transform(W)
-        c = [colors[i] for i in Y]
-        plt.scatter(embedding[:, 0], embedding[:, 1], c=c, s=0.1)
-        wandb.log({"umap": wandb.Image(plt)})
+        # this creates the plot
+        # x shape 
+        x = torch.cat([torch.cat([d[0],d[1],d[2],d[3]], 1) for d in data], 2)
+        plt.figure(figsize=(self.args['batch_size']*2, 8))
+        plt.imshow(x.permute(1,2,0).detach().cpu().numpy(), aspect='auto')
+        wandb.log({'Reconstruction and Synthesis': wandb.Image(plt)})
+        
+    def check_seperability(self): 
+        with torch.no_grad():
+            latent_representations = []
+            labels = []
+            for img, label in self.trainer.datamodule.val_dataloader():
+                img = img.to(self.device)
+                latent_representations.append(self.encoder(img))
+                labels.append(label)
+            w = torch.concat(latent_representations, dim=0).cpu().numpy()
+            label = torch.concat(labels, dim=0).numpy()
+            embedding = umap.UMAP().fit_transform(w)
+            
+        colors = ListedColormap(['red', 'blue', 'green', 'yellow', 'purple', 'cyan', 'orange', 'black', 'darkkhaki', 'pink'])
+        plt.figure(figsize=(15, 10))
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=label, marker='*', alpha=0.2, s=10, cmap=colors)
+        plt.legend(*scatter.legend_elements())
+        wandb.log({'umap': wandb.Image(plt)})
 
     def apply_correct_optimizer(self, func, modules):
 
@@ -425,7 +423,7 @@ class DisentangledSG(pl.LightningModule):
         predicted_labels = self.classifier(w)
         classification_loss = self.classifier_loss(predicted_labels, labels)
         accuracy = torch.sum(predicted_labels.argmax(
-            dim=1) == labels)/len(batch[0])
+            dim=1) == labels)/len(batch)
 
         self.log('classifier_train_loss', classification_loss)
         self.log('classifier_train_accuracy', accuracy)
