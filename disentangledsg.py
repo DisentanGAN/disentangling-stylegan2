@@ -254,8 +254,10 @@ class DisentangledSG(pl.LightningModule):
         bs = self.args['batch_size']
         if bs > 16:
             num_of_lines = int(self.args['batch_size'] / 16)
+            assert bs % 16 == 0, "batch_size needs to be multiple of 16 for log_images / make_img_plot"
         else:
             num_of_lines = 1
+
 
         x = make_img_plot([example_images, \
                 reconstructed_images, \
