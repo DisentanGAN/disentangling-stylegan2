@@ -12,10 +12,16 @@ def train(hparams):
 
     dsg = DisentangledSG(vars(hparams))
 
-    wandb_logger = WandbLogger(project="disentangling-gan")
+    
+    wandb_logger = None
 
     if hparams.run_name is None:
+        wandb_logger = WandbLogger(project="disentangling-gan")
         hparams.run_name = wandb_logger.version
+    else:
+        wandb_logger = WandbLogger(project="disentangling-gan", \
+                name=hparams.run_name)
+
 
     datasets = {'mnist': MNISTDataModule,
                 'pcam': PCAMDataModule}
