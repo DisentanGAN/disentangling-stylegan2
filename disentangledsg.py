@@ -240,23 +240,65 @@ class DisentangledSG(pl.LightningModule):
         columns = ['real images', 'reconstructed images',
                    'synthetic images', 'reconstructed synthetic images']
 
-        def pad(img, padding):
-            return torch.nn.functional.pad(img, tuple([padding] * 4), "constant", 1)
+        # use argument rows to specify number of rows in display
+        x = self.make_img_plot([example_images, \
+                reconstructed_images, \
+                synthetic_images, \
+                reconstructed_synthetic_images])
 
-        padding = 1
-        data = list(zip(
-            list(pad(example_images, padding)),
-            list(pad(reconstructed_images, padding)),
-            list(pad(synthetic_images, padding)),
-            list(pad(reconstructed_synthetic_images, padding)),
-        ))
-        
-        # this creates the plot
-        # x shape 
-        x = torch.cat([torch.cat([d[0],d[1],d[2],d[3]], 1) for d in data], 2)
-        plt.figure(figsize=(self.args['batch_size']*2, 8))
+        # use scale to set size of the plot
+        scale = 10
+        inch = scale / 100.
+        pltsize = (int(x.shape[-1] * inch), int(x.shape[-2] * inch))
+
+        plt.figure(figsize=pltsize)
         plt.imshow(x.permute(1,2,0).detach().cpu().numpy(), aspect='auto')
         wandb.log({'Reconstruction and Synthesis': wandb.Image(plt)})
+
+    
+    def make_img_plot(imgs, rows=2) -> torch.Tensor:
+        """
+        make layout for logged plots
+        """
+        entries = len(imgs)
+
+        def pad(img, padding=2):
+            padded = torch.nn.functional.pad(img, tuple([padding] * 4), "constant", 1)
+            return padded
+
+        def frame(img, framing=1):
+            framed = torch.nn.functional.pad(img, (0, 0, framing, framing), "constant", 0.8)
+            framed[1:,:framing,:] = 0
+            framed[1:,-framing:,:] = 0
+            return framed
+
+        def get_dims(img, rows):
+            single_shape = list(img.shape[-3:])
+            cols = img.shape[-4]
+            new_dims = tuple([-1, int(cols / rows)] + single_shape)
+            return new_dims
+
+        def flatten(img):
+            accum_width = img.shape[-1] * img.shape[-4]
+            flat = img.permute(2, 0, 3, 1, 4)
+            flat = torch.reshape(flat, (3, -1, accum_width))
+            return flat
+        
+        
+        padded = [pad(i) for i in imgs]
+        new_dims = get_dims(padded[0], rows)
+        shaped = [torch.reshape(p, new_dims) for p in padded]
+        stacked = torch.cat(shaped, dim=1)
+        arranged = torch.reshape(stacked, new_dims)
+        panel_dims = tuple([-1, entries] + list(arranged.shape[-4:]))
+
+        comp = torch.reshape(arranged, panel_dims)
+        render = torch.cat([frame(flatten(c), 1) for c in list(comp)], 1)
+
+        return render
+
+                  
+
         
     def check_seperability(self): 
         with torch.no_grad():
