@@ -18,7 +18,7 @@ to disentangle y and thereby w.
 
 end to end view for synthesized images:
 
-  z        w        x        y       d   
+  z        w        x        y       d
 -----> F -----> G -----> E -----> D ---> real / fake
 
 end to end view for real images:
@@ -63,7 +63,7 @@ import umap
 import matplotlib.pyplot as plt
 
 from matplotlib.colors import ListedColormap
-from classifier import LinearClassifier, NonLinearClassifier
+from classifier import LinearClassifier, NonLinearClassifier, ResNet1D
 from defaultvalues import channels, default_args, optim_conf
 from discriminator import Discriminator
 from encoder import Encoder
@@ -112,7 +112,16 @@ class DisentangledSG(pl.LightningModule):
             self.classifier = NonLinearClassifier(
                 self.args['latent'], self.args['classifier_classes'])
             self.classifier_loss = torch.nn.CrossEntropyLoss()
-            
+
+        elif self.args['classifier'] == 'Resnet':
+            self.classifier = ResNet1D(in_channels=self.args['latent'],
+                                       base_filters=32,
+                                       kernel_size=3,
+                                       stride=1,
+                                       groups=1,
+                                       n_block=1,
+                                       n_classes=self.args['classifier_classes'])
+            self.classifier_loss = torch.nn.CrossEntropyLoss()
         else:
             self.classifier = None
 
@@ -167,12 +176,12 @@ class DisentangledSG(pl.LightningModule):
 
         ckpt_path = self.args['checkpoint_path']
         run_name = self.args['dataset'] + '-' + self.args['classifier'] + '-' + self.args['run_name']
-               
+
         self.trainer.save_checkpoint(f'{ckpt_path}/{run_name}-last.ckpt')
 
         if self.current_epoch % self.args['save_checkpoint_every'] == 0:
             self.trainer.save_checkpoint(f'{ckpt_path}/{run_name}-epoch-{self.current_epoch:03d}.ckpt')
-    
+
 
     def validation_step(self, batch, batch_idx):
         if batch_idx == 0 and self.current_epoch % self.args['store_images_every'] == 0:
@@ -196,14 +205,14 @@ class DisentangledSG(pl.LightningModule):
             self.log('classifier_validation_accuracy', accuracy)
 
             return {
-                'classifier_validation_loss': classification_loss, 
+                'classifier_validation_loss': classification_loss,
                 'classifier_validation_accuracy': accuracy
                 }
 
     def validation_epoch_end(self, outputs):
         if not self.classifier:
             return
-        
+
         avg_loss, avg_accuracy = 0, 0
         for out in outputs:
             avg_loss += out['classifier_validation_loss']
@@ -297,8 +306,6 @@ class DisentangledSG(pl.LightningModule):
 
         return render
 
-                  
-
         
     def check_seperability(self): 
         with torch.no_grad():
@@ -311,12 +318,13 @@ class DisentangledSG(pl.LightningModule):
             w = torch.concat(latent_representations, dim=0).cpu().numpy()
             label = torch.concat(labels, dim=0).numpy()
             embedding = umap.UMAP().fit_transform(w)
-            
+
         colors = ListedColormap(['red', 'blue', 'green', 'yellow', 'purple', 'cyan', 'orange', 'black', 'darkkhaki', 'pink'])
         plt.figure(figsize=(15, 10))
         scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=label, marker='*', alpha=0.2, s=10, cmap=colors)
         plt.legend(*scatter.legend_elements())
         wandb.log({'umap': wandb.Image(plt)})
+
 
     def apply_correct_optimizer(self, func, modules):
 
