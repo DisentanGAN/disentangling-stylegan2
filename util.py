@@ -672,7 +672,7 @@ def make_img_plot(imgs, rows=2) -> torch.Tensor:
     """
     entries = len(imgs)
 
-    def pad(img, padding=2):
+    def pad(img, padding=1):
         padded = torch.nn.functional.pad(img, tuple([padding] * 4), "constant", 1)
         return padded
 
