@@ -111,7 +111,9 @@ class DisentangledSG(pl.LightningModule):
 
         elif self.args['classifier'] == 'NonLinear':
             self.classifier = NonLinearClassifier(
-                self.args['latent'], self.args['classifier_classes'])
+                in_dim=self.args['latent'],
+                out_dim=self.args['classifier_classes'],
+                n_layers=self.args['classifier_depth'],)
             self.classifier_loss = torch.nn.CrossEntropyLoss()
 
         elif self.args['classifier'] == 'Resnet':
@@ -120,7 +122,7 @@ class DisentangledSG(pl.LightningModule):
                                        kernel_size=3,
                                        stride=1,
                                        groups=1,
-                                       n_block=1,
+                                       n_block=self.args['classifier_depth'],
                                        n_classes=self.args['classifier_classes'])
             self.classifier_loss = torch.nn.CrossEntropyLoss()
         else:

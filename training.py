@@ -80,6 +80,7 @@ def setup_non_default_args(parser):
     parser.add_argument("--dataset", type=str, help="dataset to train on")
     parser.add_argument("--ckpt", type=str, default=None, help="checkpoint to resume training from")
     parser.add_argument("--debug", type=bool, default=False, help="run in debug mode")
+    parser.add_argument("--classifier_depth", type=int, default=3, help="depth of classifier")
     #parser.add_argument("--logger", type=str, default="wandb", help="logger to be used")
 
 if __name__ == "__main__":

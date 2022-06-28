@@ -13,14 +13,14 @@ class LinearClassifier(nn.Module):
 
 
 class NonLinearClassifier(nn.Module):
-    def __init__(self, in_dim, out_dim):
+    def __init__(self, in_dim, out_dim, n_layers=3):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(
             nn.Linear(in_dim, 128)
         )
 
-        for _ in range(3):
+        for _ in range(n_layers):
             self.layers.append(
                 nn.Linear(128, 128)
             )
