@@ -240,11 +240,15 @@ class DisentangledSG(pl.LightningModule):
         columns = ['real images', 'reconstructed images',
                    'synthetic images', 'reconstructed synthetic images']
 
+        def pad(img, padding):
+            return torch.nn.functional.pad(img, tuple([padding] * 4), "constant", 1)
+
+        padding = 1
         data = list(zip(
-            list(example_images),
-            list(reconstructed_images),
-            list(synthetic_images),
-            list(reconstructed_synthetic_images)
+            list(pad(example_images, padding)),
+            list(pad(reconstructed_images, padding)),
+            list(pad(synthetic_images, padding)),
+            list(pad(reconstructed_synthetic_images, padding)),
         ))
         
         # this creates the plot
