@@ -67,10 +67,12 @@ default_args = {
     "dataloader_workers": 2,
     "classifier": "NonLinear",
     "classifier_classes": 10,
+    "classifier_depth": 3,
     "checkpoint_path": 'checkpoints/',
     #"checkpoint_path": '/netscratch/checkpoints/',
     "save_checkpoint_every": 4,
 }
+
 # help strings for argparser
 default_args_help = {
     "r1": "weight of the r1 regularization",
@@ -93,6 +95,7 @@ default_args_help = {
     "dataloader_workers": "number of workers for data loaders",
     "classifier": "classifier to be used",
     "classifier_classes": "number of classes for the classifier",
+    "classifier_depth": "depth of classifier",
     "checkpoint_path": "path to the checkpoint to resume training",
     "save_checkpoint_every": "interval for saving checkpoints",
 }
