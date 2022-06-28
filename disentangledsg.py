@@ -265,7 +265,7 @@ class DisentangledSG(pl.LightningModule):
         wandb.log({'Reconstruction and Synthesis': wandb.Image(plt)})
 
     
-    def make_img_plot(imgs, rows=2) -> torch.Tensor:
+    def make_img_plot(self, imgs, rows=2) -> torch.Tensor:
         """
         make layout for logged plots
         """
