@@ -65,7 +65,7 @@ default_args = {
     "seed": 42,
     "batch_size": 32,
     "dataloader_workers": 2,
-    "classifier": "NonLinear",
+    "classifier": None,
     "classifier_classes": 10,
     "classifier_depth": 3,
     "checkpoint_path": 'checkpoints/',
