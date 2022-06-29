@@ -47,8 +47,11 @@ def train(hparams):
             limit_val_batches=0.01)         
     
     trainer.fit(dsg, datamodule=datamodule, ckpt_path=hparams.ckpt)
+    path = hparams.checkpoint_path
+    if path[-1] == "/":
+        path = path[:-1]
     trainer.save_checkpoint(
-        f"checkpoint/{hparams.run_name}_{hparams.dataset}.ckpt")
+        f"{path}/{hparams.run_name}_{hparams.dataset}.ckpt")
 
 def setup_default_parser_args():
     parser = argparse.ArgumentParser(description="DisentanGAN training script")
