@@ -290,7 +290,7 @@ class DisentangledSG(pl.LightningModule):
             label = torch.concat(labels, dim=0).numpy()
             embedding = umap.UMAP().fit_transform(w)
 
-        colors = ListedColormap(['red', 'blue', 'green', 'yellow', 'purple', 'cyan', 'orange', 'black', 'darkkhaki', 'pink'])
+        colors = ListedColormap(['red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'black', 'darkkhaki', 'cyan'])
         plt.figure(figsize=(15, 10))
         scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=label, marker='*', alpha=0.2, s=10, cmap=colors)
         plt.legend(*scatter.legend_elements())
