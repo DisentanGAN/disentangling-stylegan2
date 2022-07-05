@@ -1,5 +1,19 @@
 #!/bin/bash
 #
+#
+#
+# GET EXPERIMENT VERSION
+#
+if [ -z $1 ]; then
+    echo -e "\n\n\tplease add the experiment version as argument"
+    echo -e "\tlike so:"
+    echo -e "\t$0 1\n\n"
+    exit 0
+fi
+
+v=$(printf "%03d" $1)
+
+#
 ######################
 # RUN PCAM EXPERIMENTS
 ######################
@@ -12,7 +26,7 @@ python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
     --save_checkpoint_every 1 \
-    --run_name pn_reconstruction
+    --run_name pn_reconstruction$v
 #
 #
 # 2. Train Model with nonlinear classifier (resnet)
@@ -23,7 +37,7 @@ python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
     --save_checkpoint_every 1 \
-    --run_name pr_conservation \
+    --run_name pr_conservation$v \
     --classifier Resnet \
     --classifier_depth 3 \
     --classifier_classes 2
@@ -36,7 +50,7 @@ python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
     --save_checkpoint_every 1 \
-    --run_name pd_conservation \
+    --run_name pd_conservation$v \
     --classifier NonLinear \
     --classifier_depth 3 \
     --classifier_classes 2
@@ -49,7 +63,7 @@ python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
     --save_checkpoint_every 1 \
-    --run_name pl_disentanglement \
+    --run_name pl_disentanglement$v \
     --classifier Linear \
     --classifier_classes 2
 #
@@ -69,7 +83,7 @@ python training.py \
     --dataset mnist \
     --max_time 00:06:00:00 \
     --save_checkpoint_every 8 \
-    --run_name mn_reconstruction
+    --run_name mn_reconstruction$v
 #
 #
 #
@@ -79,7 +93,7 @@ python training.py \
     --dataset mnist \
     --max_time 00:06:00:00 \
     --save_checkpoint_every 8 \
-    --run_name mr_conservation \
+    --run_name mr_conservation$v \
     --classifier Resnet \
     --classifier_depth 3 \
     --classifier_classes 10
@@ -91,7 +105,7 @@ python training.py \
     --dataset mnist \
     --max_time 00:06:00:00 \
     --save_checkpoint_every 8 \
-    --run_name md_conservation \
+    --run_name md_conservation$v \
     --classifier NonLinear \
     --classifier_depth 3 \
     --classifier_classes 10
@@ -102,7 +116,7 @@ python training.py \
     --dataset mnist \
     --max_time 00:06:00:00 \
     --save_checkpoint_every 8 \
-    --run_name ml_disentanglement \
+    --run_name ml_disentanglement$v \
     --classifier Linear \
     --classifier_classes 10
 #
