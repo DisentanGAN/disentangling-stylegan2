@@ -448,7 +448,7 @@ class DisentangledSG(pl.LightningModule):
         predicted_labels = self.classifier(w)
         classification_loss = self.classifier_loss(predicted_labels, labels)
         accuracy = torch.sum(predicted_labels.argmax(
-            dim=1) == labels)/len(batch)
+            dim=1) == labels)/self.args['batch_size']
 
         self.log('classifier_train_loss', classification_loss)
         self.log('classifier_train_accuracy', accuracy)
