@@ -1,6 +1,7 @@
 import torch.nn as nn
 from util import Conv1dPadSame, MaxPool1dPadSame, BasicBlock1d
 
+
 class LinearClassifier(nn.Module):
 
     def __init__(self, in_dim, out_dim):
@@ -27,7 +28,6 @@ class NonLinearClassifier(nn.Module):
 
         self.classification = nn.Linear(128, out_dim)
 
-
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
@@ -36,6 +36,7 @@ class NonLinearClassifier(nn.Module):
         x = self.classification(x)
 
         return x
+
 
 class ResNet1D(nn.Module):
     """

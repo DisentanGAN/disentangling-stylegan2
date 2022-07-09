@@ -225,7 +225,7 @@ class DisentangledSG(pl.LightningModule):
         avg_accuracy /= len(outputs)
 
         self.log('avg_classifier_validation_loss', avg_loss)
-        self.log('classifier_validation_accuracy', avg_accuracy)
+        self.log('avg_classifier_validation_accuracy', avg_accuracy)
 
     def log_images(self, batch) -> None:
         if type(self.logger) != pl.loggers.wandb.WandbLogger:
@@ -276,9 +276,8 @@ class DisentangledSG(pl.LightningModule):
         plt.imshow(x.permute(1,2,0).detach().cpu().numpy(), aspect='auto')
         wandb.log({'Reconstruction and Synthesis': wandb.Image(plt)})
 
-    
-        
-    def check_seperability(self): 
+
+    def check_seperability(self):
         with torch.no_grad():
             latent_representations = []
             labels = []
