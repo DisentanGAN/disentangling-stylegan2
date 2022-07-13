@@ -6,12 +6,15 @@ based on random vector z
 Output is the synthesized image x
 """
 
+import math
+import random
+
+import torch
 import torch.nn as nn
 
-from util import *
+from util import ConstantInput, StyledConv, ToRGB
 
 
- 
 class Generator(nn.Module):
     def __init__(
         self,
@@ -22,7 +25,6 @@ class Generator(nn.Module):
     ):
 
         super().__init__()
-
 
         self.size = size
         self.style_dim = style_dim
@@ -99,11 +101,9 @@ class Generator(nn.Module):
         randomize_noise=True,
     ):
         """
-        styles: also known as w from the w-mannifold,
+        styles: also known as w from the w-manifold,
         a latent embedding that hopefully carries some
         disentangled feature information
-
-        # TODO: what are the other arguments?
 
         returns: image x synthesized from styles
         """

@@ -12,8 +12,7 @@ tasks to the training scheme.
 
 import torch.nn as nn
 
-from util import *
-
+from util import PixelNorm, EqualLinear
 
 
 class MappingNetwork(nn.Module):
@@ -21,7 +20,7 @@ class MappingNetwork(nn.Module):
         self,
         style_dim,
         n_mlp,
-        lr_mlp=0.01, # TODO: learning rate should probably not be set here
+        lr_mlp=0.01,
     ):
         super().__init__()
 
@@ -46,8 +45,7 @@ class MappingNetwork(nn.Module):
     def forward(self, z):
         """
         z: randomly sampled vector
-        returns: transformation of z into w-mannifold
+        returns: transformation of z into w-manifold
         """
         w = self.style(z)
         return w
-

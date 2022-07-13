@@ -1,13 +1,12 @@
-import math
-import random
-import functools
-import operator
+"""
+Utility classes and functions.
+"""
 
+import random
 
 import torch
 from torch import nn, autograd
 from torch.nn import functional as F
-from torch.autograd import Function
 
 from op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d, conv2d_gradfix
 
@@ -456,7 +455,6 @@ class ResBlock(nn.Module):
         return out
 
 
-
 def requires_grad(model, flag=True):
     for p in model.parameters():
         p.requires_grad = flag
@@ -478,7 +476,7 @@ def make_noise(batch, latent_dim, n_noise, device=None):
     return noises
 
 
-def mixing_noise(batch, latent_dim, prob, device = None):
+def mixing_noise(batch, latent_dim, prob, device=None):
     if prob > 0 and random.random() < prob:
         return make_noise(batch, latent_dim, 2, device=device)
 
@@ -527,10 +525,12 @@ def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
     return path_penalty, path_mean.detach(), path_lengths
 
 ### RESNET-1D UTILS ###
+
 class Conv1dPadSame(nn.Module):
     """
     extend nn.Conv1d to support SAME padding
     """
+
     def __init__(self, in_channels, out_channels, kernel_size, stride, groups=1):
         super(Conv1dPadSame, self).__init__()
         self.in_channels = in_channels
@@ -559,6 +559,7 @@ class Conv1dPadSame(nn.Module):
 
         return net
 
+
 class MaxPool1dPadSame(nn.Module):
     """
     extend nn.MaxPool1d to support SAME padding
@@ -583,10 +584,12 @@ class MaxPool1dPadSame(nn.Module):
 
         return net
 
+
 class BasicBlock1d(nn.Module):
     """
     ResNet 1D Basic Block
     """
+
     def __init__(self, in_channels, out_channels, kernel_size, stride, groups, downsample, use_bn, use_do, is_first_block=False):
         super(BasicBlock1d, self).__init__()
 
@@ -665,6 +668,7 @@ class BasicBlock1d(nn.Module):
 
         return out
 
+### PLOTTING ###
 
 def make_img_plot(imgs, rows=2) -> torch.Tensor:
     """
@@ -693,8 +697,7 @@ def make_img_plot(imgs, rows=2) -> torch.Tensor:
         flat = img.permute(2, 0, 3, 1, 4)
         flat = torch.reshape(flat, (3, -1, accum_width))
         return flat
-    
-    
+
     padded = [pad(i) for i in imgs]
     new_dims = get_dims(padded[0], rows)
     shaped = [torch.reshape(p, new_dims) for p in padded]
@@ -706,4 +709,3 @@ def make_img_plot(imgs, rows=2) -> torch.Tensor:
     render = torch.cat([frame(flatten(c), 1) for c in list(comp)], 1)
 
     return render
-

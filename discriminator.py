@@ -4,13 +4,13 @@ by the encoder based upon an input
 image x.
 
 Output is true/false -- whether the
-embedding y is based upon a 
+embedding y is based upon a
 synthesized image x or a real image X
 """
 
 import torch.nn as nn
 
-from util import *
+from util import EqualLinear
 
 
 class Discriminator(nn.Module):
@@ -34,4 +34,3 @@ class Discriminator(nn.Module):
         a real image X or a fake image x.
         """
         return self.final_linear(y)
-

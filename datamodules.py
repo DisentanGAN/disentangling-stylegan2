@@ -3,7 +3,6 @@ Contains LightningDataModules for supported datasets.
 """
 from typing import Optional
 
-import torch
 from torch.utils.data.dataset import random_split
 from torch.utils.data.dataloader import DataLoader
 from torchvision.transforms import transforms
@@ -21,7 +20,6 @@ class MNISTDataModule(pl.LightningDataModule):
             # make MNIST images 32x32x3
             transforms.Grayscale(3),
             transforms.Pad(2),
-
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,), inplace=True),
         ])

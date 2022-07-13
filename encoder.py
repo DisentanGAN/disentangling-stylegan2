@@ -8,11 +8,16 @@ that would generate x when
 fed to the Generator
 """
 
+import math
+
+import torch
 import torch.nn as nn
 
-from util import *
+from util import ConvLayer, ResBlock, EqualLinear
+
 
 class Encoder(nn.Module):
+
     def __init__(
         self,
         size,
@@ -49,7 +54,7 @@ class Encoder(nn.Module):
     def forward(self, x):
         """
         x: image
-        returns: embedding of x in w-mannifold
+        returns: embedding of x in w-manifold
         """
         out = self.convs(x)
 
@@ -74,4 +79,3 @@ class Encoder(nn.Module):
         out = self.final_linear(out)
 
         return out
-
