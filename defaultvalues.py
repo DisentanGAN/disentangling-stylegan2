@@ -21,16 +21,14 @@ channels = {
     # 1024: 16 * channel_multiplier,
 }
 
-# values here only for debbuging
-# TODO: find sensible default values
 optim_conf = {
     "generator": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.002},
+        "args": {"lr": 0.002},
     },
     "discriminator": {
         "optimizer": torch.optim.Adam,
-        "args": {"lr" : 0.002},
+        "args": {"lr": 0.002},
     },
     "encoder": {
         "optimizer": torch.optim.Adam,
@@ -69,7 +67,6 @@ default_args = {
     "classifier_classes": 10,
     "classifier_depth": 3,
     "checkpoint_path": 'checkpoints/',
-    #"checkpoint_path": '/netscratch/checkpoints/',
     "save_checkpoint_every": 4,
 }
 
