@@ -11,6 +11,7 @@ This allows for a clear super model containing the model architecture(s) and orc
 
 On the **legacy_code** branch, you can find the original codebase, that we forked from.
 This codebase differs greatly from ours and might not work with newer versions of PyTorch and other libraries.
+Nonetheless, we adapted part of the code and changed the general structure.
 
 Furthermore, we refer to our code as DisentanGAN, even though it bases around the ALAE architecture.
 This is merely a style choice.
@@ -35,6 +36,8 @@ for a StyleALAE + Classifier on embeddings run on the MNIST dataset.
 
 Further examples can be found in [example_experiments.sh](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/example_experiments.sh).
 
+Another option we have included is to train a ResNet for image classification.
+This can be found in [resnet_training.py](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/resnet_training.py)
 #### Default values
 
 We employ a default config to control various hyperparameters.
