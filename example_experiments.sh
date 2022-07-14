@@ -19,9 +19,6 @@ v=$(printf "%03d" $1)
 ######################
 #
 # 1. Train Model without classifier
-#    experiment name: pn_reconstruction
-#    we test the quality of image reconstruction when
-#    this is the only optimization goal
 python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
@@ -31,8 +28,6 @@ python training.py \
 #
 # 2. Train Model with nonlinear classifier (resnet)
 #    experiment name: pr_conservation
-#    we test whether the encoding preserves the
-#    information encoded in the labels
 python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
@@ -45,7 +40,6 @@ python training.py \
 #
 # 3. Train Model with nonlinear classifier (densenet)
 #    experiment name: pd_conservation
-#    see 2.
 python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \
@@ -57,8 +51,6 @@ python training.py \
 #
 # 4. Train Model with linear classifier
 #    experiment name: pl_disentanglement
-#    we test whether the encoding can learn
-#    a linearly separable encoding
 python training.py \
     --dataset pcam \
     --max_time 00:12:00:00 \

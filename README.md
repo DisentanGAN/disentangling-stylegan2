@@ -1,110 +1,114 @@
-# StyleGAN 2 in PyTorch
+## DisentanGAN: A StyleALAE framework built in PyTorch Lightning
 
-Implementation of Analyzing and Improving the Image Quality of StyleGAN (https://arxiv.org/abs/1912.04958) in PyTorch
+This repository contains a framework for extending the [StyleALAE architecture](https://openaccess.thecvf.com/content_CVPR_2020/html/Pidhorskyi_Adversarial_Latent_Autoencoders_CVPR_2020_paper.html).
+Our aim is to provide an easily extensible and comprehensible framework allowing addition of further downstream tasks, such as classification or segmentation.
+The greater goal behind that is to challenge the latent space disentanglement problem by incorporating different techniques.
 
-## Notice
+For ease of use, the PyTorch Lightning framework is employed.
+This allows for a clear super model containing the model architecture(s) and orchestrating the training in desired manner.
 
-I have tried to match official implementation as close as possible, but maybe there are some details I missed. So please use this implementation with care.
+#### Note:
 
-## Requirements
+On the **legacy_code** branch, you can find the original codebase, that we forked from.
+This codebase differs greatly from ours and might not work with newer versions of PyTorch and other libraries.
 
-I have tested on:
+Furthermore, we refer to our code as DisentanGAN, even though it bases around the ALAE architecture.
+This is merely a style choice.
 
-- PyTorch 1.3.1
-- CUDA 10.1/10.2
+### Requirements
 
-## Usage
+To install the requirements, execute:
 
-First create lmdb datasets:
+    pip install -r requirements.txt
 
-> python prepare_data.py --out LMDB_PATH --n_worker N_WORKER --size SIZE1,SIZE2,SIZE3,... DATASET_PATH
+### Usage
 
-This will convert images to jpeg and pre-resizes it. This implementation does not use progressive growing, but you can create multiple resolution datasets using size arguments with comma separated lists, for the cases that you want to try another resolutions later.
+To train, simply execute the training script, e.g.:
+    
+    python training.py --dataset pcam --run_name example_run_pcam
 
-Then you can train model in distributed settings
+for a StyleALAE run on the PatchCamelyon (PCAM) dataset or
+    
+    python training.py --dataset mnist --run_name example_run_mnist --classifier NonLinear --classifier_depth 1 --classifier_classes 10
 
-> python -m torch.distributed.launch --nproc_per_node=N_GPU --master_port=PORT train.py --batch BATCH_SIZE LMDB_PATH
+for a StyleALAE + Classifier on embeddings run on the MNIST dataset.
 
-train.py supports Weights & Biases logging. If you want to use it, add --wandb arguments to the script.
+Further examples can be found in [example_experiments.sh](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/example_experiments.sh).
 
-#### SWAGAN
+#### Default values
 
-This implementation experimentally supports SWAGAN: A Style-based Wavelet-driven Generative Model (https://arxiv.org/abs/2102.06108). You can train SWAGAN by using
+We employ a default config to control various hyperparameters.
+This config can be found in [defaultvalues.py](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/defaultvalues.py)
+The following default argments are used:
 
-> python -m torch.distributed.launch --nproc_per_node=N_GPU --master_port=PORT train.py --arch swagan --batch BATCH_SIZE LMDB_PATH
+```
+default_args = {
+    "r1": 10,
+    "path_regularize": 2,
+    "path_batch_shrink": 2,
+    "d_reg_every": 16,
+    "g_reg_every": 4,
+    "mixing": 0.9,
+    "augment": False,
+    "augment_p": 0.8,
+    "ada_target": 0.6,
+    "ada_length": 500000,
+    "ada_every": 256,
+    "latent": 128,
+    "image_size": 32,
+    "n_mlp": 8,
+    "store_images_every": 1,
+    "seed": 42,
+    "batch_size": 32,
+    "dataloader_workers": 2,
+    "classifier": "None",
+    "classifier_classes": 10,
+    "classifier_depth": 3,
+    "checkpoint_path": 'checkpoints/',
+    "save_checkpoint_every": 4,
+}
+```
 
-As noted in the paper, SWAGAN trains much faster. (About ~2x at 256px.)
+Each of these is at the same time a command-line argument and can thus be flexibly controlled.
+Descriptions for each can be found in the above file.
 
-### Convert weight from official checkpoints
+#### Implementation
 
-You need to clone official repositories, (https://github.com/NVlabs/stylegan2) as it is requires for load official checkpoints.
+The detailed training scheme is orchestrated by the DisentangledSG LightningModule found in [disentangledsg.py](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/disentangledsg.py).
+It contains the Mapping network, Generator, Encoder, and Discriminator as basic structure and, if chosen, the Classifier.
 
-For example, if you cloned repositories in ~/stylegan2 and downloaded stylegan2-ffhq-config-f.pkl, You can convert it like this:
+The general structure allows for adding further downstream tasks and their specific optimization schemes.
+Each task has their own optimization/regularization functions, prefixed with an underscore (e.g. **_optimize_generation(...)**).
+This modularizes the code further.
 
-> python convert_weight.py --repo ~/stylegan2 stylegan2-ffhq-config-f.pkl
+#### Supported Datasets
 
-This will create converted stylegan2-ffhq-config-f.pt file.
+Currently, the following datasets are supported and have PyTorch Lightning DataModules implemented.
 
-### Generate samples
+##### MNIST
 
-> python generate.py --sample N_FACES --pics N_PICS --ckpt PATH_CHECKPOINT
+The MNIST benchmark dataset is fairly well-known and traditionally used. It consists of 28x28 grayscale images of digits 0 to 9.
 
-You should change your size (--size 256 for example) if you train with another dimension.
+##### PatchCamelyon (PCAM)
 
-### Project images to latent spaces
+The [PatchCamelyon](https://github.com/basveeling/pcam) dataset is a newer benchmark dataset derived from the bigger Camelyon16 dataset.
+It consists of 327.680 RGB-color images of size 96x96 extracted from histopathologic scans of lymph node sections and contains a positive class (if the 32x32 center pixels contain cancer tissue) and a negative class (if they do not).
+For further details, see the link to the original repository.
 
-> python projector.py --ckpt [CHECKPOINT] --size [GENERATOR_OUTPUT_SIZE] FILE1 FILE2 ...
+### Citation
 
-### Closed-Form Factorization (https://arxiv.org/abs/2007.06600)
+If our code is helpful to you and you use it for a scientific publication, we would appreciate a citation using the following BibTex entry:
 
-You can use `closed_form_factorization.py` and `apply_factor.py` to discover meaningful latent semantic factor or directions in unsupervised manner.
-
-First, you need to extract eigenvectors of weight matrices using `closed_form_factorization.py`
-
-> python closed_form_factorization.py [CHECKPOINT]
-
-This will create factor file that contains eigenvectors. (Default: factor.pt) And you can use `apply_factor.py` to test the meaning of extracted directions
-
-> python apply_factor.py -i [INDEX_OF_EIGENVECTOR] -d [DEGREE_OF_MOVE] -n [NUMBER_OF_SAMPLES] --ckpt [CHECKPOINT] [FACTOR_FILE]
-
-For example,
-
-> python apply_factor.py -i 19 -d 5 -n 10 --ckpt [CHECKPOINT] factor.pt
-
-Will generate 10 random samples, and samples generated from latents that moved along 19th eigenvector with size/degree +-5.
-
-![Sample of closed form factorization](factor_index-13_degree-5.0.png)
-
-## Pretrained Checkpoints
-
-[Link](https://drive.google.com/open?id=1PQutd-JboOCOZqmd95XWxWrO8gGEvRcO)
-
-I have trained the 256px model on FFHQ 550k iterations. I got FID about 4.5. Maybe data preprocessing, resolution, training loop could made this difference, but currently I don't know the exact reason of FID differences.
-
-## Samples
-
-![Sample with truncation](doc/sample.png)
-
-Sample from FFHQ. At 110,000 iterations. (trained on 3.52M images)
-
-![MetFaces sample with non-leaking augmentations](doc/sample-metfaces.png)
-
-Sample from MetFaces with Non-leaking augmentations. At 150,000 iterations. (trained on 4.8M images)
-
-### Samples from converted weights
-
-![Sample from FFHQ](doc/stylegan2-ffhq-config-f.png)
-
-Sample from FFHQ (1024px)
-
-![Sample from LSUN Church](doc/stylegan2-church-config-f.png)
-
-Sample from LSUN Church (256px)
+```
+@misc{disentangan,
+    title={{DisentanGAN}: A StyleALAE framework built in PyTorch Lightning},
+    author={Biebel, Florian and Hufe, Lorenz and Wiedersich, Niklas Luis and Zimmermann, Sebastian},
+    publisher={GitHub},
+    howpublished={\url{https://github.com/DisentanGAN/disentangling-stylegan2/}}
+}
+```
 
 ## License
 
-Model details and custom CUDA kernel codes are from official repostiories: https://github.com/NVlabs/stylegan2
+Custom CUDA kernel codes are from official repostiories: https://github.com/NVlabs/stylegan2
 
-Codes for Learned Perceptual Image Patch Similarity, LPIPS came from https://github.com/richzhang/PerceptualSimilarity
-
-To match FID scores more closely to tensorflow official implementations, I have used FID Inception V3 implementations in https://github.com/mseitzer/pytorch-fid

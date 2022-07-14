@@ -1,32 +1,22 @@
 
-import glob
 import os
-import time
-import csv
 import json
 
 import numpy as np
-#import matplotlib.pyplot as plt
-import h5py
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-#import torchvision.utils as vutils
 
 from torchvision import transforms
 import torchvision.models.resnet as resnet
-from torchvision.datasets import MNIST
 
 from torchvision.datasets import PCAM
 
 # from torchsummary import summary
 
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 
 from tqdm import tqdm
-
 
 
 @torch.no_grad()
@@ -38,10 +28,9 @@ def eval_Clf(model, validation_loader):
         y = data[1].cuda()
         predicted = torch.argmax(model(X), dim=1)
         # predicted = torch.round(model(X))
-        acc+=(predicted == y).sum()/float(predicted.shape[0])
+        acc += (predicted == y).sum()/float(predicted.shape[0])
     model.train()
     return (acc/(i+1)).item()
-
 
 
 class Training:
@@ -77,13 +66,11 @@ class Training:
             'clf_acc': [],
             'clf_loss_val': [],
             'clf_acc_val': [],
-            # todo: recall, precision
         }
 
         for epoch in tqdm(range(epochs)):
             clf_loss = []
             clf_acc = []
-
 
             for i, data in tqdm(enumerate(train_loader)):
                 X = data[0].to(self.device)
@@ -93,9 +80,6 @@ class Training:
                 clf_loss.append(loss)
                 clf_acc.append(acc)
 
-                
-
-#             if epoch % 10 == 0:
             acc_val = eval_Clf(self.Clf, validation_loader)
             clf_loss_m = sum(clf_loss)/len(clf_loss)
             clf_acc_m = sum(clf_acc)/len(clf_acc)
@@ -104,7 +88,7 @@ class Training:
 #             self.stats['clf_loss_val'].append(loss_val)
             self.stats['clf_acc_val'].append(acc_val)
 
-            self.best_acc_count+=1
+            self.best_acc_count += 1
             if acc_val > self.best_acc:
                 self.best_acc = acc_val
                 self.best_acc_count = 0
@@ -119,13 +103,11 @@ class Training:
             if self.best_acc_count >= self.early_stopping_count:
                 break
 
-        print("Finished. Best acc: %.3f"%(self.best_acc))
-        
+        print("Finished. Best acc: %.3f" % (self.best_acc))
+
         with open(f"resnet_metrics_{self.model_name}.json", "w") as f:
             payload = json.dumps(self.stats)
             f.write(payload)
-
-
 
     def _train_Clf(self, data, labels):
         self.Clf_opt.zero_grad()
@@ -137,7 +119,6 @@ class Training:
         loss.backward()
         self.Clf_opt.step()
 
-        # acc = (np.round(predicted.detach().cpu()) == labels.detach().cpu()).sum()/float(predicted.shape[0])
         acc = (torch.argmax(predicted.detach().cpu(), dim=1) == labels.detach().cpu()).sum()/float(predicted.shape[0])
 
         return loss.detach().item(), acc.item()
@@ -150,27 +131,37 @@ class Training:
 
 
 if __name__ == "__main__":
-    transform = transforms.Compose(    
+    transform = transforms.Compose(
             [
                 transforms.ToTensor(),
                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                 transforms.CenterCrop(32)
-            ]    
+            ]
         )
 
     loader = DataLoader(
-            PCAM('/workspace/ld2/latent_disentanglement/disentangling-stylegan2/data/', split="train", download=False, transform=transform),
+            PCAM('/workspace/ld2/latent_disentanglement/disentangling-stylegan2/data/',
+                 split="train",
+                 download=False,
+                 transform=transform),
             batch_size=32,
             drop_last=True,
         )
 
     loader_val = DataLoader(
-            PCAM('/workspace/ld2/latent_disentanglement/disentangling-stylegan2/data/', split="test", download=False, transform=transform),
+            PCAM('/workspace/ld2/latent_disentanglement/disentangling-stylegan2/data/',
+                 split="test",
+                 download=False,
+                 transform=transform),
             batch_size=32,
             drop_last=True,
             )
 
     print("initializing training ...")
-    t = Training(resnet.ResNet(resnet.BasicBlock, [2, 2, 2, 2], num_classes=10), 'clf_resnet18_pcam_train001', early_stopping_count=10)
+    t = Training(resnet.ResNet(resnet.BasicBlock,
+                               [2, 2, 2, 2],
+                               num_classes=10),
+                 'clf_resnet18_pcam_train001',
+                 early_stopping_count=10)
     print("start training...")
     t.train(loader, loader_val, 100)
