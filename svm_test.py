@@ -1,4 +1,7 @@
 import csv
+import argparse
+import glob
+import os
 from pathlib import Path
 
 import numpy as np
@@ -24,7 +27,8 @@ def svm_test(encoder, loader, max_iter=2000, c=0.01, random_state=random.randint
     :param c: the SVM regularization strength, note that it is inverse. 
     :return: a margin for every class against all others AND the classifier object
     """
-    clf = make_pipeline(StandardScaler(), LinearSVC(random_state=random_state, tol=1e-5, multi_class='ovr', max_iter=max_iter, C=c))
+    clf = make_pipeline(StandardScaler(), LinearSVC(
+        random_state=random_state, tol=1e-5, multi_class='ovr', max_iter=max_iter, C=c))
 
     # Check if datalaoder batch size is equal to the dataset size to ensure that all data is used for testing
     # Note that the above implemented SVM classifier does not support partial fit which leads to all eval data must be loaded at once
@@ -33,7 +37,8 @@ def svm_test(encoder, loader, max_iter=2000, c=0.01, random_state=random.randint
     margin = []
     dataset_size = len(loader.dataset)
     if(dataset_size != loader.batch_size):
-        loader_attr = dict(filter(lambda item: not item[0].startswith("_"), loader.__dict__.items()))
+        loader_attr = dict(
+            filter(lambda item: not item[0].startswith("_"), loader.__dict__.items()))
 
         loader_attr['batch_sampler'] = None
         loader_attr['batch_size'] = dataset_size
@@ -42,7 +47,8 @@ def svm_test(encoder, loader, max_iter=2000, c=0.01, random_state=random.randint
     for i, (data, target) in enumerate(loader):
         latent_vars = encoder(data).detach().numpy()
         target = target.detach().numpy()
-        w_train, w_test, target_train, target_test = train_test_split(latent_vars, target, test_size=0.2, random_state=42)
+        w_train, w_test, target_train, target_test = train_test_split(
+            latent_vars, target, test_size=0.2, random_state=42)
 
         clf.fit(w_train, target_train)
         linear_svc = clf.named_steps['linearsvc']
@@ -60,7 +66,7 @@ def load_pl_model(load_path):
     :return: The PyTorch Lightning Model
     """
     sg = DisentangledSG.load_from_checkpoint(load_path)
-    return {'generator':sg.generator,'mapping': sg.mapping, 'discriminator':sg.discriminator,'encoder': sg.encoder, 'classifier':sg.classifier}
+    return {'generator': sg.generator, 'mapping': sg.mapping, 'discriminator': sg.discriminator, 'encoder': sg.encoder, 'classifier': sg.classifier}
 
 
 def get_test_dataloader(datamodule):
@@ -120,7 +126,8 @@ def perform_evaluation(experiment_path, dataset, max_iter=4000, c=0.01, save_to=
     encoder = load_pl_model(experiment_path)['encoder'].eval()
     data_module = get_datamodule(dataset, **kargs)
     test_loader = get_test_dataloader(data_module)
-    results, _, test_acc = svm_test(encoder, test_loader, max_iter=max_iter, c=c)
+    results, _, test_acc = svm_test(
+        encoder, test_loader, max_iter=max_iter, c=c)
     metrics = calc_metrics(experiment_path, results, max_iter)
     metrics['test_acc'] = test_acc
     metrics['c_val'] = c
@@ -135,35 +142,36 @@ def perform_evaluation(experiment_path, dataset, max_iter=4000, c=0.01, save_to=
     print("Following results were saved:")
     print(metrics)
 
-######################################
-# Perform Evaluation
-# For a pcam performance comparison see: https://ieeexplore.ieee.org/document/9342346
-#####################################
-folder = "/workspace/ld2/latent_disentanglement/disentangling-stylegan2/to_test_with_svm_007"
-pcam = ["pcam-Linear-pl_disentanglement002-epoch-007.ckpt", "pcam-NonLinear-pd_conservation002-epoch-007.ckpt", "pcam-None-pn_reconstruction002-epoch-007.ckpt", "pcam-Resnet-pr_conservation002-epoch-007.ckpt"]
-pcam_experiments = [folder + '/' + f for f in pcam]
 
-mnist = ["mnist-Linear-ml_disentanglement002-last.ckpt","mnist-None-mn_reconstruction002-last.ckpt", "mnist-NonLinear-md_conservation002-last.ckpt", "mnist-Resnet-mr_conservation002-last.ckpt"]
+if __name__ == "__main__":
 
-mnist_folder = "/workspace/ld2/latent_disentanglement/disentangling-stylegan2/to_test_with_svm_mnist_last"
-mnist_experiments = [mnist_folder + '/' + f for f in mnist]
+    parser = argparse.ArgumentParser(
+        description='Perform the disentanglement test by using a linear SVM for the ALAE+C architecture based on the MNIST or PCAM dataset.')
+    parser.add_argument('-mp', dest='models_dir_path', type=str,
+                        help='Path of the directory of which all models will be tested.')
+    parser.add_argument('-sp', dest='save_path', type=str,
+                        help='Path of where results will be saved.')
+    parser.add_argument('-d', dest='dataset', choices=['mnist', 'pcam'],
+                        help='Choose the dataset, i.e. between mnist and pcam')
+    parser.add_argument('-c', dest='c_vals', nargs='*', default=[0.001, 0.01, 0.1, 1.0, 10], type=float,
+                        help='Regularization values for the linear SVM.')
+    parser.add_argument('-i', dest='n_iter', type=int, default=2000,
+                        help='Number of iterations for the SVM.')
 
-c_values = [0.001, 0.01, 0.1, 1.0, 10]
+    args = parser.parse_args()
+    try:
+        os.mkdir(args.save_path)
+    except OSError as error:
+        print(error)
 
-# Conduct svm mnist experiment
-for experiment in mnist_experiments:
-    for c_val in c_values:
-        perform_evaluation(experiment_path=experiment,
-                           dataset='mnist',
-                           max_iter=2000,
-                           c=c_val,
-                           save_to="svm-encoder-results-mnist")
+    experiments = [f.replace(
+        '\\', '/') for f in glob.glob(args.models_dir_path + "**/*.ckpt", recursive=True)]
 
-# Conduct svm pcam experiment
-for experiment in pcam_experiments:
-    for c_val in c_values:
-        perform_evaluation(experiment_path=experiment,
-                           dataset='pcam',
-                           max_iter=2000,
-                           c=c_val,
-                           save_to="svm-encoder-results-pcam")
+    for experiment in experiments:
+        print(f"Conducting experiment for {experiment}")
+        for c_val in args.c_vals:
+            perform_evaluation(experiment_path=experiment,
+                               dataset=args.dataset,
+                               max_iter=args.n_iter,
+                               c=c_val,
+                               save_to=args.save_path)
