@@ -1,35 +1,17 @@
-import torch
-import sklearn
+import csv
+from pathlib import Path
+
 import numpy as np
-from torch import nn, autograd, optim
-from torch.nn import functional as F
-from torch.utils import data
-import torch.distributed as dist
-from torchvision import transforms, utils
-from torchvision.datasets import MNIST
-import torchvision.models.resnet as resnet
+from numpy import random
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
-from numpy import random
 from sklearn.pipeline import make_pipeline
-from typing import Tuple
-import numpy as np
-import torchvision.models.resnet as resnet
-import pytorch_lightning as pl
-from disentangledsg import DisentangledSG
-from classifier import LinearClassifier, NonLinearClassifier
-from defaultvalues import channels, default_args, optim_conf
-from discriminator import Discriminator
-from encoder import Encoder
-from generator import Generator
-from mappingnetwork import MappingNetwork
-import datamodules
-from pathlib import Path
-from torch.utils.data import DataLoader
-import csv
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-import os
+from torch.utils.data import DataLoader
+
+from disentangledsg import DisentangledSG
+import datamodules
 
 
 def svm_test(encoder, loader, max_iter=2000, c=0.01, random_state=random.randint(10000)):
@@ -42,7 +24,7 @@ def svm_test(encoder, loader, max_iter=2000, c=0.01, random_state=random.randint
     :param c: the SVM regularization strength, note that it is inverse. 
     :return: a margin for every class against all others AND the classifier object
     """
-    clf = make_pipeline(StandardScaler(), LinearSVC(random_state=random_state, tol=1e-5, multi_class = 'ovr',max_iter=max_iter, C=c ))
+    clf = make_pipeline(StandardScaler(), LinearSVC(random_state=random_state, tol=1e-5, multi_class='ovr', max_iter=max_iter, C=c))
 
     # Check if datalaoder batch size is equal to the dataset size to ensure that all data is used for testing
     # Note that the above implemented SVM classifier does not support partial fit which leads to all eval data must be loaded at once
