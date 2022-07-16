@@ -98,6 +98,15 @@ The [PatchCamelyon](https://github.com/basveeling/pcam) dataset is a newer bench
 It consists of 327.680 RGB-color images of size 96x96 extracted from histopathologic scans of lymph node sections and contains a positive class (if the 32x32 center pixels contain cancer tissue) and a negative class (if they do not).
 For further details, see the link to the original repository.
 
+#### Disentanglement Analysis using SVMs
+
+To analyze the quality of the latent space disentanglement, we employ a linear SVM classification using the trained model checkpoints.
+Executing [svm_test.py](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/svm_test.py) as follows, will create CSV files in the specified output directory.
+
+    python svm_test.py -mp  <path/to/model_checkpoints> -sp <path/to/output_dir> -d <dataset_name> -c regularization_values
+
+For information on how to use these CSV files, refer to the example [jupyter-notebook](https://github.com/DisentanGAN/disentangling-stylegan2/blob/master/svm_result_analysis.ipynb).
+
 ### Citation
 
 If our code is helpful to you and you use it for a scientific publication, we would appreciate a citation using the following BibTex entry:
@@ -113,5 +122,7 @@ If our code is helpful to you and you use it for a scientific publication, we wo
 
 ## License
 
-Custom CUDA kernel codes are from official repostiories: https://github.com/NVlabs/stylegan2
+The code is licensed under the MIT license.
+
+Custom CUDA kernel codes are from official repositories: https://github.com/NVlabs/stylegan2
 

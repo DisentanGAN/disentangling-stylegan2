@@ -134,7 +134,7 @@ def perform_evaluation(experiment_path, dataset, max_iter=4000, c=0.01, save_to=
     experiment_name = Path(experiment_path).stem
     field_names = list(metrics.keys())
 
-    with open(f'{save_to}/Results_{c}_{experiment_name}.csv', 'w') as csvfile:
+    with open(f'{save_to}/results_{c}_{experiment_name}.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=field_names)
         writer.writeheader()
         writer.writerow(metrics)
